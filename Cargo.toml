@@ -1,0 +1,13 @@
+[package]
+name = "wreck"
+version = "0.1.0"
+authors = ["Fisher Darling <fdarlingco@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "WRECK"
+path = "src/bin/main.rs"
+
+[dependencies]
