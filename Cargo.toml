@@ -12,3 +12,4 @@ path = "src/bin/main.rs"
 
 [dependencies]
 silly-lex = { path = "./silly-lex" }
+asterix = { path = "./asterix/asterix" }
