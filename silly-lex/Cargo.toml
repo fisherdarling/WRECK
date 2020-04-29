@@ -1,0 +1,8 @@
+[package]
+name = "silly-lex"
+version = "0.1.0"
+authors = ["Fisher Darling <fdarling@mines.edu>"]
+edition = "2018"
+
+[dependencies]
+structopt = "*"
