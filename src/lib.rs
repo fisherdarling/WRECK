@@ -1,3 +1,5 @@
+use silly_lex::{Lexer, Token};
+
 #[cfg(test)]
 mod tests {
     #[test]
