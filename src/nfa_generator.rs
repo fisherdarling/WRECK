@@ -52,6 +52,12 @@ impl NFAGenerator {
                 .collect();
             let has_lambda = *self.lambda_transitions.get(&(from, *to)).unwrap_or(&false);
 
+            if from == 1 {
+                output_line.push_str("+ ");
+            } else {
+                output_line.push_str("- ")
+            }
+
             output_line.push_str(&from.to_string());
             output_line.push_str(" ");
             output_line.push_str(&to.to_string());
@@ -80,6 +86,12 @@ impl NFAGenerator {
             let from = (t.0).0;
             let to = (t.0).1;
             let mut output_line = String::new();
+
+            if from == 1 {
+                output_line.push_str("+ ");
+            } else {
+                output_line.push_str("- ")
+            }
 
             output_line.push_str(&from.to_string());
             output_line.push(' ');
