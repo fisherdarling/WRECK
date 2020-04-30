@@ -14,8 +14,7 @@ pub struct NFAGenerator {
     // same pattern as transitions, but top is number not char?
     pub lambdaTransitions: BTreeMap<(usize, usize), usize>,
 
-    pub currentState: usize,
-    pub nextState: usize,
+    pub highestStateNumber: usize,
 }
 
 impl NFAGenerator {
@@ -24,26 +23,24 @@ impl NFAGenerator {
             root: root,
             transitions: BTreeMap::new(),
             lambdaTransitions: BTreeMap::new(),
-            currentState: 0,
-            nextState: 0,
+            highestStateNumber: 0,
         }
     }
 
+    pub fn getNewState(&mut self) -> usize {
+        self.highestStateNumber += 1;
+        self.highestStateNumber
+    }
+
     /// Returns weather or not a change has been made
-    pub fn addToTable(&mut self, node: &AstNode) -> bool {
+    pub fn addToTable(&mut self, node: &AstNode, currentState: usize, nextState: usize) -> bool {
         match node.kind {
+            AstKind::Char(c) => {
+                self.transitions
+                    .insert((currentState, c.clone()), nextState);
+            }
             AstKind::Seq => {
-                if node.children.len() == 1 {
-                    let child = &node.children[0];
-                    match child.kind {
-                        AstKind::Char(c) => {
-                            // leafChild case
-                            self.transitions
-                                .insert((self.currentState, c.clone()), self.nextState);
-                        }
-                        _ => todo!(),
-                    }
-                }
+                todo!();
             }
             _ => todo!(),
         }
