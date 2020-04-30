@@ -1,0 +1,39 @@
+RE      {'plus':    1,  'char':  1,'$': 1,'kleene': 1,'pipe': 1,'dot': 1,'open': 1 }
+ALT     {'plus':    2,  'char':  2,'close': 2,'kleene': 2,'$': 2,'pipe': 2,'dot': 2,'open': 2 }
+ALTLIST {'pipe':    3,  'close': 4,'$': 4 }
+SEQ     {'plus':    5,  'char':  5,'kleene': 5,'open': 5,'dot': 5,'close': 6,'pipe': 6,'$': 6 }
+SEQLIST {'plus':    7,  'char':  7,'kleene': 7,'open': 7,'dot': 7,'close': 8,'pipe': 8,'$': 8 }
+ATOM    {'plus':    9,  'char':  9,'kleene': 9,'open': 9,'dot': 9 }
+ATOMMOD {'kleene': 12,  'plus':  12,'$': 12,'open': 12,'char': 12,'close': 12,'pipe': 12,'dot': 12 }
+NUCLEUS {'open':   13,  'char':  14,'dot': 15 }
+CHARRNG {'dash':   16,  '$':     17,'kleene': 17,'plus': 17,'pipe': 17,'char': 17,'close': 17,'open': 17,'dot': 17 }
+
+
+0   RE ➝ ALT
+1   ALT ➝ SEQ ALTLIST
+2   ALTLIST ➝ pipe SEQ ALTLIST
+3   ALTLIST ➝ ε
+4   SEQ ➝ ATOM SEQLIST
+5   .SEQ ➝ ε
+6   SEQLIST ➝ ATOM SEQLIST
+7   SEQLIST ➝ ε
+8   ATOM ➝ NUCLEUS ATOMMOD
+9   ATOMMOD ➝ star
+10  ATOMMOD ➝ plus
+11  ATOMMOD ➝ ε
+12  NUCLEUS ➝ open ALT close
+13  NUCLEUS ➝ char CHARRNG
+14  NUCLEUS ➝ char
+15  CHARRNG ➝ dash char
+16  NUCLEUS ➝ ε 
+
+        pipe  star  plus  open  close char  dash  $     
+RE      0     0     0     0     .     0     .     0     
+ALT     1     1     1     1     1     1     .     1     
+ALTLIST 2     .     .     .     3     .     .     3     
+SEQ     4     4     4     4     4     4     .     4     
+SEQLIST 6     6     6     6     6     6     .     6     
+ATOM    8     8     8     8     8     8     .     8     
+ATOMMOD 11    9     10    11    11    11    .     11    
+NUCLEUS 16    16    16    12    16    13    .     16    
+CHARRNG .     .     .     .     .     .     15    .     

@@ -1,6 +1,10 @@
 use silly_lex::{Lexer, Token};
 
 pub mod ast;
+pub mod cfg;
+pub mod error;
+pub mod production;
+pub mod symbol;
 
 #[cfg(test)]
 mod tests {

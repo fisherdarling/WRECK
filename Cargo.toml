@@ -12,3 +12,8 @@ path = "src/bin/main.rs"
 
 [dependencies]
 silly-lex = { path = "./silly-lex" }
+thiserror = "*"
+anyhow = "*"
+derive_more = "*"
+regex = "*"
+lazy_static = "*"
