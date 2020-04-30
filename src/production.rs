@@ -9,6 +9,14 @@ impl Production {
         self.0.iter().any(|s| s.is_terminal())
     }
 
+    pub fn index_of(&self, symbol: &Symbol) -> Option<usize> {
+        self.0
+            .iter()
+            .enumerate()
+            .find(|(i, s)| *s == symbol)
+            .map(|(i, s)| i)
+    }
+
     pub fn only_lambda(&self) -> bool {
         self.0.len() == 1 && self.0[0] == Symbol::Lambda
     }

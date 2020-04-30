@@ -63,6 +63,67 @@ impl CFG {
         false
     }
 
+    pub fn first_set(&self, non_terminal: &NonTerminal) -> BTreeSet<Terminal> {
+        let mut first_set = BTreeSet::new();
+
+        for production_index in &self.production_map[non_terminal] {
+            let production = &self.productions[*production_index];
+            let (first, rest) = self.first(production.symbols(), BTreeSet::new());
+            first_set.extend(first.into_iter());
+        }
+
+        first_set
+    }
+
+    pub fn first(
+        &self,
+        symbols: &[Symbol],
+        mut t: BTreeSet<Symbol>,
+    ) -> (BTreeSet<Terminal>, BTreeSet<Symbol>) {
+        if let Some((symbol, rest)) = symbols.split_first() {
+            // println!("{:?} . {:?}", symbol, rest);
+
+            // The first set of a terminal is simply itself:
+            if let Ok(terminal) = symbol.terminal() {
+                let mut set = BTreeSet::new();
+                set.insert(terminal.clone());
+                return (set, t);
+            }
+
+            // The first of Lambda is empty:
+            if symbol.is_lambda() {
+                return (BTreeSet::new(), t);
+            }
+
+            let mut f: BTreeSet<Terminal> = BTreeSet::new();
+
+            if !t.contains(&symbol) {
+                t.insert(symbol.clone());
+
+                // Get all of the productions of the first symbol
+                for production_index in &self.production_map[symbol.non_terminal().unwrap()] {
+                    let production = &self.productions[*production_index];
+                    let (g, _s) = self.first(production.symbols(), t.clone());
+                    f.extend(g.into_iter());
+                }
+            }
+
+            if self.derives_to_lambda(
+                symbol
+                    .non_terminal()
+                    .expect("Cannot be a terminal at this point"),
+                &mut Vec::new(),
+            ) {
+                let (g, _s) = self.first(rest, t.clone());
+                f.extend(g.into_iter());
+            }
+
+            return (f, t);
+        } else {
+            return Default::default();
+        }
+    }
+
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let mut cfg = CFG::new();
 
@@ -155,6 +216,8 @@ impl Line {
     }
 
     pub fn from_str(input: String) -> Result<Line> {
+        println!("From Str: {:?}", input);
+
         let mut split: Vec<&str> = input.trim().split(' ').collect();
 
         match &split.as_slice() {
