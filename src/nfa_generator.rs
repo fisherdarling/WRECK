@@ -64,12 +64,13 @@ impl NFAGenerator {
     }
 
     pub fn node_seq(&mut self, node: &AstNode, this: usize, next: usize) {
-        let new_states: Vec<usize> = (0..node.children.len())
+        let new_states: Vec<usize> = (0..node.children.len() - 1)
             .map(|_| self.get_new_state())
             .collect();
 
-        for i in 0..node.children.len() - 1 {
-            self.add_to_table(&node.children[i], new_states[i], new_states[i + 1]);
+        self.add_to_table(&node.children[0], this, new_states[0]);
+        for i in 1..node.children.len() - 1 {
+            self.add_to_table(&node.children[i], new_states[i - 1], new_states[i]);
         }
         self.add_to_table(
             node.children.last().unwrap(),
@@ -94,12 +95,8 @@ impl NFAGenerator {
     }
 
     pub fn node_alt(&mut self, node: &AstNode, this: usize, next: usize) {
-        let new_states: Vec<usize> = (0..node.children.len())
-            .map(|_| self.get_new_state())
-            .collect();
-
-        for (i, state) in new_states.iter().enumerate() {
-            self.add_to_table(&node.children[i], *state, next);
+        for i in 0..node.children.len() {
+            self.add_to_table(&node.children[i], this, next);
         }
     }
 
@@ -116,19 +113,48 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_alt() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Alt);
+        r.children.push(AstNode::new(AstKind::Char('b')));
+        r.children.push(AstNode::new(AstKind::Char('c')));
+        r.children.push(AstNode::new(AstKind::Char('d')));
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'b'), 1);
+        expected_t.insert((0, 'c'), 1);
+        expected_t.insert((0, 'd'), 1);
+
+        assert_eq!(simple.transitions, expected_t);
+        assert_eq!(simple.lambda_transitions, BTreeMap::new());
+    }
+    #[test]
+    fn test_lambda() {
+        let r = AstNode::new(AstKind::Lambda);
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_l = BTreeMap::new();
+        expected_l.insert((0, 1), true);
+
+        assert_eq!(simple.transitions, BTreeMap::new());
+        assert_eq!(simple.lambda_transitions, expected_l);
+    }
+
+    #[test]
     fn testing_leaf_node() {
         // let mut r = AstNode::new(AstKind::Seq);
         // r.children.push(AstNode::new(AstKind::Char('b')));
         let r = AstNode::new(AstKind::Char('b'));
 
-        let mut alpha: BTreeSet<char> = BTreeSet::new();
-        alpha.insert('a');
-        alpha.insert('b');
-        alpha.insert('c');
-        alpha.insert('d');
-        alpha.insert('e');
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
 
-        let mut simple = NFAGenerator::new(alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
         simple.add_to_table(&r, 0, 1);
 
         let expected_l = BTreeMap::new();
@@ -145,14 +171,9 @@ mod tests {
     fn testing_leaf_dot() {
         let r = AstNode::new(AstKind::Dot);
 
-        let mut alpha: BTreeSet<char> = BTreeSet::new();
-        alpha.insert('a');
-        alpha.insert('b');
-        alpha.insert('c');
-        alpha.insert('d');
-        alpha.insert('e');
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
 
-        let mut simple = NFAGenerator::new(alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_t = BTreeMap::new();
@@ -161,6 +182,46 @@ mod tests {
         expected_t.insert((0, 'c'), 1);
         expected_t.insert((0, 'd'), 1);
         expected_t.insert((0, 'e'), 1);
+
+        assert_eq!(simple.lambda_transitions, BTreeMap::new());
+        assert_eq!(simple.transitions, expected_t);
+    }
+
+    #[test]
+    fn test_simple_seq() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Seq);
+        r.children.push(AstNode::new(AstKind::Char('b')));
+        r.children.push(AstNode::new(AstKind::Char('c')));
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'b'), 2);
+        expected_t.insert((2, 'c'), 1);
+
+        assert_eq!(simple.lambda_transitions, BTreeMap::new());
+        assert_eq!(simple.transitions, expected_t);
+    }
+
+    #[test]
+    fn test_four_seq() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Seq);
+        r.children.push(AstNode::new(AstKind::Char('b')));
+        r.children.push(AstNode::new(AstKind::Char('c')));
+        r.children.push(AstNode::new(AstKind::Char('d')));
+        r.children.push(AstNode::new(AstKind::Char('e')));
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'b'), 2);
+        expected_t.insert((2, 'c'), 3);
+        expected_t.insert((3, 'd'), 4);
+        expected_t.insert((4, 'e'), 1);
 
         assert_eq!(simple.lambda_transitions, BTreeMap::new());
         assert_eq!(simple.transitions, expected_t);
