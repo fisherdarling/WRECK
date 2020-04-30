@@ -1,7 +1,7 @@
 use crate::ast::AstKind;
 /// This takes in a perfectly simplified Regex tree and creates an NFA
 use crate::ast::AstNode;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub struct NFAGenerator {
     pub root: AstNode,
@@ -12,9 +12,11 @@ pub struct NFAGenerator {
     pub transitions: BTreeMap<(usize, char), usize>,
 
     // same pattern as transitions, but top is number not char?
-    pub lambdaTransitions: BTreeMap<(usize, usize), usize>,
+    pub lambda_transitions: BTreeMap<(usize, usize), usize>,
 
-    pub highestStateNumber: usize,
+    pub highest_state_number: usize,
+
+    pub alpha: BTreeSet<char>,
 }
 
 impl NFAGenerator {
@@ -22,22 +24,31 @@ impl NFAGenerator {
         Self {
             root: root,
             transitions: BTreeMap::new(),
-            lambdaTransitions: BTreeMap::new(),
-            highestStateNumber: 0,
+            lambda_transitions: BTreeMap::new(),
+            highest_state_number: 0,
+            alpha: BTreeSet::new(),
         }
     }
 
-    pub fn getNewState(&mut self) -> usize {
-        self.highestStateNumber += 1;
-        self.highestStateNumber
+    pub fn get_new_state(&mut self) -> usize {
+        self.highest_state_number += 1;
+        self.highest_state_number
     }
 
-    /// Returns weather or not a change has been made
-    pub fn addToTable(&mut self, node: &AstNode, currentState: usize, nextState: usize) -> bool {
+    pub fn insert_to_trans(&mut self, current: usize, next: usize, value: char) {
+        self.transitions.insert((current, value), next);
+    }
+
+    /// Returns weather or not a change has been made. `curent_state` is "this" in psuedocode, `next_state` is next
+    pub fn add_to_table(
+        &mut self,
+        node: &AstNode,
+        current_state: usize,
+        next_state: usize,
+    ) -> bool {
         match node.kind {
             AstKind::Char(c) => {
-                self.transitions
-                    .insert((currentState, c.clone()), nextState);
+                self.insert_to_trans(current_state, next_state, c.clone());
             }
             AstKind::Seq => {
                 todo!();
