@@ -7,6 +7,14 @@ fn main() -> anyhow::Result<()> {
 
     println!("{:#?}", cfg);
 
+    // for nt in &cfg.non_terminals {
+    //     println!(
+    //         "{:?}: {:?}",
+    //         nt,
+    //         cfg.derives_to_lambda(&nt, &mut Vec::new())
+    //     );
+    // }
+
     for nt in &cfg.non_terminals {
         println!("{:?}: {:?}", nt, cfg.first_set(&nt));
     }

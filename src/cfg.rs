@@ -100,26 +100,11 @@ impl CFG {
             if !t.contains(&symbol) {
                 t.insert(symbol.clone());
 
-                // Find all lists of symbols that follow the usage of symbol
-                for production in &self.productions {
-                    // If this production contains the symbol:
-                    if let Some(index) = production.index_of(&symbol) {
-                        // The production is just of itself
-                        if index + 1 == production.symbols().len() {
-                            continue;
-                        }
-
-                        let rhs_symbol = &production[index + 1];
-
-                        // Get the production for this non_terminal
-                        if let Ok(rhs_nt) = rhs_symbol.non_terminal() {
-                            for &rhs_production_index in &self.production_map[rhs_nt] {
-                                let rhs_production = &self.productions[rhs_production_index];
-                                let (g, _s) = self.first(rhs_production.symbols(), t.clone());
-                                f.extend(g.into_iter());
-                            }
-                        }
-                    }
+                // Get all of the productions of the first symbol
+                for production_index in &self.production_map[symbol.non_terminal().unwrap()] {
+                    let production = &self.productions[*production_index];
+                    let (g, _s) = self.first(production.symbols(), t.clone());
+                    f.extend(g.into_iter());
                 }
             }
 
