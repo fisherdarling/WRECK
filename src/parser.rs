@@ -52,7 +52,7 @@ impl<'c, 't> Parser<'c, 't> {
                 let next = stream.next()?;
 
                 return match terminal.terminal() {
-                    "char" | "open" | "close" | "dash" => {
+                    "char" | "open" | "close" | "dash" | "pipe" => {
                         let node = AstNode::new(AstKind::Char(next.data.chars().next().unwrap()));
 
                         Some(node)
