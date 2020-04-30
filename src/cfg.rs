@@ -20,8 +20,47 @@ impl CFG {
         Self::default()
     }
 
-    pub fn first(symbol: &Symbol) -> BTreeSet<Terminal> {
-        todo!()
+    pub fn derives_to_lambda(
+        &self,
+        nt: &NonTerminal,
+        stack: &mut Vec<(Production, NonTerminal)>,
+    ) -> bool {
+        for production_idx in &self.production_map[nt] {
+            let production = &self.productions[*production_idx];
+
+            if production.only_lambda() {
+                return true;
+            }
+
+            if production.contains_terminal() {
+                continue;
+            }
+
+            let mut all_derive_lambda = true;
+
+            for rhs_symbol in production.symbols().iter() {
+                let rhs = rhs_symbol.non_terminal().unwrap();
+                let tuple = (production.clone(), rhs.clone());
+
+                if stack.contains(&tuple) {
+                    continue;
+                }
+
+                stack.push(tuple);
+                all_derive_lambda = self.derives_to_lambda(rhs, stack);
+                stack.pop();
+
+                if !all_derive_lambda {
+                    break;
+                }
+            }
+
+            if all_derive_lambda {
+                return true;
+            }
+        }
+
+        false
     }
 
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {

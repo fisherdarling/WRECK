@@ -64,6 +64,7 @@ impl From<String> for NonTerminal {
 pub enum Symbol {
     Terminal(Terminal),
     NonTerminal(NonTerminal),
+    Lambda,
 }
 
 impl Symbol {
@@ -97,11 +98,27 @@ impl Symbol {
         }
     }
 
+    pub fn is_terminal(&self) -> bool {
+        if let Symbol::Terminal(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn non_terminal(&self) -> Result<&NonTerminal> {
         if let Symbol::NonTerminal(ref t) = self {
             Ok(t)
         } else {
             Err(anyhow!("Symbol {:?} is not a NonTerminal", self))
+        }
+    }
+
+    pub fn is_non_terminal(&self) -> bool {
+        if let Symbol::NonTerminal(_) = self {
+            true
+        } else {
+            false
         }
     }
 }
