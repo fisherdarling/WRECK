@@ -12,7 +12,7 @@ pub struct NFAGenerator {
     pub transitions: BTreeMap<(usize, char), usize>,
 
     // same pattern as transitions, but top is number not char?
-    pub lambda_transitions: BTreeMap<(usize, usize), usize>,
+    pub lambda_transitions: BTreeMap<(usize, usize), bool>,
 
     pub highest_state_number: usize,
 
@@ -51,6 +51,8 @@ impl NFAGenerator {
                 self.insert_to_trans(current_state, next_state, c.clone());
             }
             AstKind::Dot => self.leaf_dot(current_state, next_state),
+            AstKind::Lambda => self.leaf_lambda(current_state, next_state),
+            AstKind::Alt => self.node_alt(node, current_state, next_state),
             _ => todo!(),
         }
         false
@@ -58,7 +60,23 @@ impl NFAGenerator {
 
     pub fn leaf_dot(&mut self, this: usize, next: usize) {
         for c in &self.alpha {
-            self.insert_to_trans(this, next, c.clone());
+            // have to inline this instead of calling insert_to_trans because borrow checking :(
+            self.transitions.insert((this, c.clone()), next);
+        }
+    }
+
+    pub fn leaf_lambda(&mut self, this: usize, next: usize) {
+        self.lambda_transitions.insert((this, next), true);
+    }
+
+    pub fn node_alt(&mut self, node: &AstNode, this: usize, next: usize) {
+        let mut new_states: Vec<usize> = Vec::new();
+        for s in (0..node.children.len()) {
+            new_states.push(self.get_new_state());
+        }
+
+        for (i, state) in new_states.iter().enumerate() {
+            self.add_to_table(&node.children[i], state.clone(), next);
         }
     }
 }
