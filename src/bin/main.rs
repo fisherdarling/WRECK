@@ -78,7 +78,8 @@ fn main() -> anyhow::Result<()> {
     let tree = parser.parse(&mut lexer.peekable());
 
     tree.export_graph("regex.dot");
-
+    let simplified = wreck::ast::simplify_RE(&tree);
+    simplified.export_graph("regex_simpl.dot");
     Ok(())
 }
 
