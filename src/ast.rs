@@ -224,6 +224,11 @@ pub fn simplify_atom(atom_node: &AstNode) -> AstNode {
 
 pub fn simplify_nucleus(nucleus_node: &AstNode) -> AstNode {
     let mut new_nuc = AstNode::new(AstKind::Nucleus);
+    if nucleus_node.children.len() == 1 {
+        let dot = AstNode::new(AstKind::Dot);
+        new_nuc.children.push(dot);
+        return new_nuc
+    }
     if nucleus_node.children[1].kind == AstKind::CharRng {
         if nucleus_node.children[1].children.len() > 1 {
             let mut alt = AstNode::new(AstKind::Alt);
