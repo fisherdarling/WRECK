@@ -31,8 +31,8 @@ impl NFAGenerator {
 
     /// Returns weather or not a change has been made
     pub fn addToTable(&mut self, node: &AstNode) -> bool {
-        match node {
-            Seq => {
+        match node.kind {
+            AstKind::Seq => {
                 if node.children.len() == 1 {
                     let child = &node.children[0];
                     match child.kind {
@@ -45,6 +45,7 @@ impl NFAGenerator {
                     }
                 }
             }
+            _ => todo!(),
         }
         false
     }
