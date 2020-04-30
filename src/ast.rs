@@ -277,6 +277,8 @@ pub fn simplify_seq_list(node: &AstNode) -> AstNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::process::Command;
+    use std::fs::create_dir;
 
     #[test]
     fn simple_graphing() {
@@ -294,8 +296,20 @@ mod tests {
         r.children.push(a);
         r.children.push(b);
 
-        let path = PathBuf::from("test.dot");
+        match create_dir("test_output/") {
+            Ok(_) => println!("Making output dir"),
+            Err(_) => println!("Output dir already exists"),
+        };
+
+        let path = PathBuf::from("test_output/simple.dot");
         r.export_graph(path);
+        Command::new("dot")
+                .arg("-Tpng")
+                .arg("test_output/simple.dot")
+                .arg("-o")
+                .arg("test_output/simple.png")
+                .output()
+                .expect("failed to execute process");
     }
 
     #[test]
@@ -363,10 +377,29 @@ mod tests {
         y.children.push(v);
         y.children.push(x);
 
-        let path = PathBuf::from("concrete1.dot");
+        match create_dir("test_output/") {
+            Ok(_) => println!("Making output dir"),
+            Err(_) => println!("Output dir already exists"),
+        };
+
+        let path = PathBuf::from("test_output/concrete.dot");
         y.export_graph(path);
+        Command::new("dot")
+                .arg("-Tpng")
+                .arg("test_output/concrete.dot")
+                .arg("-o")
+                .arg("test_output/concrete.png")
+                .output()
+                .expect("failed to execute process");
 
         let simple = simplify_RE(&y);
-        simple.export_graph("simple1.dot")
+        simple.export_graph("test_output/AST.dot");
+        Command::new("dot")
+                .arg("-Tpng")
+                .arg("test_output/AST.dot")
+                .arg("-o")
+                .arg("test_output/AST.png")
+                .output()
+                .expect("failed to execute process");
     }
 }
