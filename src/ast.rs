@@ -32,6 +32,7 @@ impl fmt::Display for AstKind {
             AstKind::Char(c) => write!(f, "{}", c),
             AstKind::Kleene => write!(f, "*"),
             AstKind::Dot => write!(f, "."),
+            AstKind::Lambda => write!(f, "λ"),
             _ => write!(f, "{:?}", self),
         }
         // or, alternatively:
