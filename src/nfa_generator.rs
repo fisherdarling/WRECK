@@ -47,9 +47,8 @@ impl NFAGenerator {
         next_state: usize,
     ) -> bool {
         match node.kind {
-            AstKind::Char(c) => {
-                self.insert_to_trans(current_state, next_state, c.clone());
-            }
+            AstKind::Char(c) => self.leaf_child(c, current_state, next_state),
+
             AstKind::Dot => self.leaf_dot(current_state, next_state),
             AstKind::Lambda => self.leaf_lambda(current_state, next_state),
             AstKind::Alt => self.node_alt(node, current_state, next_state),
@@ -60,6 +59,10 @@ impl NFAGenerator {
             _ => todo!(),
         }
         false
+    }
+
+    pub fn leaf_child(&mut self, value: char, this: usize, next: usize) {
+        self.insert_to_trans(this, next, value);
     }
 
     pub fn leaf_dot(&mut self, this: usize, next: usize) {
