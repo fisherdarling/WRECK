@@ -17,6 +17,16 @@ pub enum AstKind {
     Char(char),
 }
 
+impl AstKind {
+    pub fn char(&self) -> anyhow::Result<char> {
+        if let AstKind::Char(c) = self {
+            Ok(*c)
+        } else {
+            Err(anyhow::anyhow!("AstKind was not a Char"))
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AstNode {
     pub kind: AstKind,
@@ -43,8 +53,7 @@ pub fn simplify_to_ast(node: AstNode) -> AstNode {
 }
 
 pub fn simplify_regex(node: AstNode) -> AstNode {
-    simplify_to_ast(node.children[0]);
-    node.children[0]
+    simplify_to_ast(node.children[0].clone())
 }
 
 pub fn simplify_atom(node: AstNode) -> AstNode {

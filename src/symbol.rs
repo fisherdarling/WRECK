@@ -6,7 +6,7 @@ use regex::Regex;
 
 lazy_static! {
     static ref SYMBOL: Regex =
-        Regex::new(r#"(?P<terminal>[a-z][a-z_]*)|(?P<nonterminal>[A-Z][a-zA-Z_]*)(?P<dollar>\$)"#)
+        Regex::new(r#"(?P<lambda>lambda)|(?P<terminal>[a-z][a-z_]*)|(?P<nonterminal>[A-Z][a-zA-Z_]*)|(?P<dollar>\$)"#)
             .unwrap();
 }
 
@@ -76,6 +76,8 @@ impl Symbol {
                 return Ok(Symbol::from_non_terminal(nonterminal.as_str().to_string()));
             } else if let Some(dollar) = captures.name("dollar") {
                 return Ok(Symbol::from_terminal(dollar.as_str().to_string()));
+            } else if let Some(_) = captures.name("lambda") {
+                return Ok(Symbol::Lambda);
             }
         }
 
@@ -120,6 +122,10 @@ impl Symbol {
         } else {
             false
         }
+    }
+
+    pub fn is_lambda(&self) -> bool {
+        Symbol::Lambda == *self
     }
 }
 

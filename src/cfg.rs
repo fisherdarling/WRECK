@@ -63,6 +63,82 @@ impl CFG {
         false
     }
 
+    pub fn first_set(&self, non_terminal: &NonTerminal) -> BTreeSet<Terminal> {
+        let mut first_set = BTreeSet::new();
+
+        for production_index in &self.production_map[non_terminal] {
+            let production = &self.productions[*production_index];
+            let (first, rest) = self.first(production.symbols(), BTreeSet::new());
+            first_set.extend(first.into_iter());
+        }
+
+        first_set
+    }
+
+    pub fn first(
+        &self,
+        symbols: &[Symbol],
+        mut t: BTreeSet<Symbol>,
+    ) -> (BTreeSet<Terminal>, BTreeSet<Symbol>) {
+        if let Some((symbol, rest)) = symbols.split_first() {
+            // println!("{:?} . {:?}", symbol, rest);
+
+            // The first set of a terminal is simply itself:
+            if let Ok(terminal) = symbol.terminal() {
+                let mut set = BTreeSet::new();
+                set.insert(terminal.clone());
+                return (set, t);
+            }
+
+            // The first of Lambda is empty:
+            if symbol.is_lambda() {
+                return (BTreeSet::new(), t);
+            }
+
+            let mut f: BTreeSet<Terminal> = BTreeSet::new();
+
+            if !t.contains(&symbol) {
+                t.insert(symbol.clone());
+
+                // Find all lists of symbols that follow the usage of symbol
+                for production in &self.productions {
+                    // If this production contains the symbol:
+                    if let Some(index) = production.index_of(&symbol) {
+                        // The production is just of itself
+                        if index + 1 == production.symbols().len() {
+                            continue;
+                        }
+
+                        let rhs_symbol = &production[index + 1];
+
+                        // Get the production for this non_terminal
+                        if let Ok(rhs_nt) = rhs_symbol.non_terminal() {
+                            for &rhs_production_index in &self.production_map[rhs_nt] {
+                                let rhs_production = &self.productions[rhs_production_index];
+                                let (g, _s) = self.first(rhs_production.symbols(), t.clone());
+                                f.extend(g.into_iter());
+                            }
+                        }
+                    }
+                }
+            }
+
+            if self.derives_to_lambda(
+                symbol
+                    .non_terminal()
+                    .expect("Cannot be a terminal at this point"),
+                &mut Vec::new(),
+            ) {
+                let (g, _s) = self.first(rest, t.clone());
+                f.extend(g.into_iter());
+            }
+
+            return (f, t);
+        } else {
+            return Default::default();
+        }
+    }
+
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let mut cfg = CFG::new();
 
@@ -155,6 +231,8 @@ impl Line {
     }
 
     pub fn from_str(input: String) -> Result<Line> {
+        println!("From Str: {:?}", input);
+
         let mut split: Vec<&str> = input.trim().split(' ').collect();
 
         match &split.as_slice() {
