@@ -338,8 +338,7 @@ mod tests {
             Err(_) => println!("Output dir already exists"),
         };
 
-        let path = PathBuf::from("test_output/simple.dot");
-        r.export_graph(path);
+        r.export_graph("test_output/simple.dot");
         Command::new("dot")
             .arg("-Tpng")
             .arg("test_output/simple.dot")
@@ -419,8 +418,7 @@ mod tests {
             Err(_) => println!("Output dir already exists"),
         };
 
-        let path = PathBuf::from("test_output/concrete.dot");
-        y.export_graph(path);
+        y.export_graph("test_output/concrete.dot");
         Command::new("dot")
             .arg("-Tpng")
             .arg("test_output/concrete.dot")
