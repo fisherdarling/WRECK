@@ -53,7 +53,7 @@ impl NFAGenerator {
             AstKind::Dot => self.leaf_dot(current_state, next_state),
             AstKind::Lambda => self.leaf_lambda(current_state, next_state),
             AstKind::Alt => self.node_alt(node, current_state, next_state),
-            /*AstKind::AtomMod(amod) => match amod {   // Liam Removed AtomMod as thing, use the AstKind's Kleen, Plus, and Lambda instead! 
+            /*AstKind::AtomMod(amod) => match amod {   // Liam Removed AtomMod as thing, use the AstKind's Kleen, Plus, and Lambda instead!
                 Kleene => self.node_kleene(node, current_state, next_state),
                 _ => todo!(),
             },*/

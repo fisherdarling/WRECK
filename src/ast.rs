@@ -50,7 +50,7 @@ pub fn simplify_RE(root_node: AstNode) -> AstNode {
 pub fn simplify_plus(node: AstNode) -> AstNode {
     let mut new_seq = AstNode::new(AstKind::Seq);
     let mut kleene = AstNode::new(AstKind::Kleene);
-    let copy = node.clone(); 
+    let copy = node.clone();
     new_seq.children.push(node);
     new_seq.children.push(kleene);
     new_seq.children[1].children.push(copy);
@@ -63,20 +63,20 @@ pub fn simplify_atom(atom_node: &AstNode) -> AstNode {
     let mut new_atom = AstNode::new(AstKind::Atom);
     match atom_mod.kind {
         AstKind::Kleene => {
-                            let mut kleene = AstNode::new(AstKind::Kleene);
-                            kleene.children.append(&mut nucleus.children);
-                            new_atom.children.push(kleene);
-                            new_atom
-                        },
+            let mut kleene = AstNode::new(AstKind::Kleene);
+            kleene.children.append(&mut nucleus.children);
+            new_atom.children.push(kleene);
+            new_atom
+        }
         AstKind::Plus => {
-                            new_atom.children.push(simplify_plus(nucleus));
-                            new_atom
-                        },
+            new_atom.children.push(simplify_plus(nucleus));
+            new_atom
+        }
         AstKind::Lambda => {
-                            new_atom.children.append(&mut nucleus.children);
-                            new_atom
-                        },
-        _ => panic!("Bad Atom Mod")
+            new_atom.children.append(&mut nucleus.children);
+            new_atom
+        }
+        _ => panic!("Bad Atom Mod"),
     }
 }
 
@@ -91,14 +91,15 @@ pub fn simplify_nucleus(nucleus_node: &AstNode) -> AstNode {
             let start: u8 = c as u8;
             let end: u8 = m as u8;
             let range = start..=end;
-            
+
             for i in range {
                 alt.children.push(AstNode::new(AstKind::Char(i as char)));
             }
             new_nuc.children.push(alt);
-        } 
+        }
         return new_nuc;
-    } else { // we're dealing with an alt!
+    } else {
+        // we're dealing with an alt!
         let alt = simplify_alt(&nucleus_node.children[1]);
         new_nuc.children.push(alt);
         return new_nuc;
@@ -126,10 +127,10 @@ pub fn simplify_alt_list(altlist_node: &AstNode) -> AstNode {
         new_alt.children.push(AstNode::new(AstKind::Lambda));
         return new_alt;
     }
-    
+
     let mut seq = simplify_seq(&altlist_node.children[1]);
     let mut alt = simplify_alt_list(&altlist_node.children[2]);
-    
+
     new_alt.children.append(&mut seq.children);
     new_alt.children.append(&mut alt.children);
 
@@ -155,7 +156,7 @@ pub fn simplify_seq(node: &AstNode) -> AstNode {
 
 pub fn simplify_seq_list(node: &AstNode) -> AstNode {
     let mut new_seq = AstNode::new(AstKind::Seq);
-    
+
     if node.children[0].kind == AstKind::Lambda {
         return new_seq;
     }
