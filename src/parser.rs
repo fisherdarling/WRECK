@@ -87,15 +87,21 @@ impl<'c, 't> Parser<'c, 't> {
                         node.children.push(new_node);
                     }
                 }
+
+                if node.children.is_empty() {
+                    node.children.push(AstNode::new(AstKind::Lambda));
+                }
             } else {
                 node.children.push(AstNode::new(AstKind::Lambda));
             }
-            // else {
-            //     panic!(format!(
-            //         "Syntax Error, No Transition: [{:?}][{:?}]",
-            //         non_terminal, terminal
-            //     ));
-            // }
+        // else {
+        //     panic!(format!(
+        //         "Syntax Error, No Transition: [{:?}][{:?}]",
+        //         non_terminal, terminal
+        //     ));
+        // }
+        } else {
+            node.children.push(AstNode::new(AstKind::Lambda));
         }
 
         node
