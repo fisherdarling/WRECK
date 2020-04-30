@@ -211,6 +211,7 @@ impl CFG {
             .or_default()
             .push(production_idx);
 
+        cfg.non_terminals.insert(start.clone());
         // Set the CFG start symbol
         cfg.start_symbol = start.clone();
 
