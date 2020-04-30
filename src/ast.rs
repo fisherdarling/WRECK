@@ -28,7 +28,12 @@ pub enum AstKind {
 
 impl fmt::Display for AstKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            AstKind::Char(c) => write!(f, "{}", c),
+            AstKind::Kleene => write!(f, "*"),
+            AstKind::Dot => write!(f, "."),
+            _ => write!(f, "{:?}", self),
+        }
         // or, alternatively:
         // fmt::Debug::fmt(self, f)
     }
@@ -141,7 +146,7 @@ impl AstNode {
     }
 
     // Export a graph to something that Graphvis can us
-    pub fn export_graph(self, file_path: impl AsRef<Path>) {
+    pub fn export_graph(&self, file_path: impl AsRef<Path>) {
         let graph = self.create_pet_graph();
         let mut f = File::create(file_path).unwrap();
         let output = format!("{}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
@@ -177,7 +182,7 @@ impl AstNode {
     }
 }
 
-pub fn simplify_RE(root_node: AstNode) -> AstNode {
+pub fn simplify_RE(root_node: &AstNode) -> AstNode {
     simplify_alt(&root_node.children[0])
 }
 
@@ -217,7 +222,6 @@ pub fn simplify_atom(atom_node: &AstNode) -> AstNode {
 pub fn simplify_nucleus(nucleus_node: &AstNode) -> AstNode {
     let mut new_nuc = AstNode::new(AstKind::Nucleus);
     if nucleus_node.children[1].kind == AstKind::CharRng {
-        new_nuc.children.push(nucleus_node.children[0].clone());
         if nucleus_node.children[1].children.len() > 1 {
             let mut alt = AstNode::new(AstKind::Alt);
             let c = nucleus_node.children[0].kind.char().unwrap();
@@ -230,6 +234,8 @@ pub fn simplify_nucleus(nucleus_node: &AstNode) -> AstNode {
                 alt.children.push(AstNode::new(AstKind::Char(i as char)));
             }
             new_nuc.children.push(alt);
+        } else {
+            new_nuc.children.push(nucleus_node.children[0].clone());
         }
         return new_nuc;
     } else {
@@ -279,10 +285,10 @@ pub fn simplify_seq(node: &AstNode) -> AstNode {
         return new_seq;
     }
 
-    let atom = simplify_atom(&node.children[0]);
+    let mut atom = simplify_atom(&node.children[0]);
     let mut seqlist = simplify_seq_list(&node.children[1]);
 
-    new_seq.children.push(atom);
+    new_seq.children.append(&mut atom.children);
     new_seq.children.append(&mut seqlist.children);
 
     new_seq
@@ -295,10 +301,10 @@ pub fn simplify_seq_list(node: &AstNode) -> AstNode {
         return new_seq;
     }
 
-    let atom = simplify_atom(&node.children[0]);
+    let mut atom = simplify_atom(&node.children[0]);
     let mut seqlist = simplify_seq_list(&node.children[1]);
 
-    new_seq.children.push(atom);
+    new_seq.children.append(&mut atom.children);
     new_seq.children.append(&mut seqlist.children);
 
     new_seq
@@ -307,9 +313,129 @@ pub fn simplify_seq_list(node: &AstNode) -> AstNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::create_dir;
+    use std::process::Command;
 
     #[test]
-    fn memes() {
-        let kind = AstKind::Char('a');
+    fn simple_graphing() {
+        let mut r = AstNode::new(AstKind::Char('b'));
+        let mut a = AstNode::new(AstKind::Regex);
+        let mut b = AstNode::new(AstKind::Seq);
+        let mut c = AstNode::new(AstKind::SeqList);
+        let mut d = AstNode::new(AstKind::Kleene);
+        let e = AstNode::new(AstKind::Regex);
+
+        a.children.push(c);
+        a.children.push(e);
+        b.children.push(d);
+
+        r.children.push(a);
+        r.children.push(b);
+
+        match create_dir("test_output/") {
+            Ok(_) => println!("Making output dir"),
+            Err(_) => println!("Output dir already exists"),
+        };
+
+        let path = PathBuf::from("test_output/simple.dot");
+        r.export_graph(path);
+        Command::new("dot")
+            .arg("-Tpng")
+            .arg("test_output/simple.dot")
+            .arg("-o")
+            .arg("test_output/simple.png")
+            .output()
+            .expect("failed to execute process");
+    }
+
+    #[test]
+    fn concrete_simplification() {
+        // Create a nucleus
+        let a = AstNode::new(AstKind::Char('a'));
+        let b = AstNode::new(AstKind::Char('-'));
+        let c = AstNode::new(AstKind::Char('d'));
+        let mut d = AstNode::new(AstKind::CharRng);
+        let mut e = AstNode::new(AstKind::Nucleus);
+        d.children.push(b);
+        d.children.push(c);
+        e.children.push(a);
+        e.children.push(d);
+
+        ///create atom
+        let f = AstNode::new(AstKind::Lambda);
+        let mut g = AstNode::new(AstKind::AtomMod);
+        let mut h = AstNode::new(AstKind::Atom);
+        g.children.push(f);
+        h.children.push(e);
+        h.children.push(g);
+
+        //// Another Nucleus
+        let i = AstNode::new(AstKind::Dot);
+        let j = AstNode::new(AstKind::Lambda);
+        let mut k = AstNode::new(AstKind::CharRng);
+        let mut l = AstNode::new(AstKind::Nucleus);
+        l.children.push(i);
+        k.children.push(j);
+        l.children.push(k);
+
+        ///// Another atom
+        let m = AstNode::new(AstKind::Lambda);
+        let mut n = AstNode::new(AstKind::AtomMod);
+        let mut o = AstNode::new(AstKind::Atom);
+        n.children.push(m);
+        o.children.push(l);
+        o.children.push(n);
+
+        ////// First Seqlist
+        let p = AstNode::new(AstKind::Lambda);
+        let mut q = AstNode::new(AstKind::SeqList);
+        let mut r = AstNode::new(AstKind::SeqList);
+        q.children.push(p);
+        r.children.push(o);
+        r.children.push(q);
+
+        /////// Sequence
+        let mut s = AstNode::new(AstKind::Seq);
+        s.children.push(h);
+        s.children.push(r);
+
+        //////// Final Alt!
+        let t = AstNode::new(AstKind::Lambda);
+        let mut u = AstNode::new(AstKind::AltList);
+        let mut v = AstNode::new(AstKind::Alt);
+        u.children.push(t);
+        v.children.push(s);
+        v.children.push(u);
+
+        ///////// REGEX, FUCKING FINALLY!
+        let x = AstNode::new(AstKind::Char('$'));
+        let mut y = AstNode::new(AstKind::Regex);
+        y.children.push(v);
+        y.children.push(x);
+
+        match create_dir("test_output/") {
+            Ok(_) => println!("Making output dir"),
+            Err(_) => println!("Output dir already exists"),
+        };
+
+        let path = PathBuf::from("test_output/concrete.dot");
+        y.export_graph(path);
+        Command::new("dot")
+            .arg("-Tpng")
+            .arg("test_output/concrete.dot")
+            .arg("-o")
+            .arg("test_output/concrete.png")
+            .output()
+            .expect("failed to execute process");
+
+        let simple = simplify_RE(&y);
+        simple.export_graph("test_output/AST.dot");
+        Command::new("dot")
+            .arg("-Tpng")
+            .arg("test_output/AST.dot")
+            .arg("-o")
+            .arg("test_output/AST.png")
+            .output()
+            .expect("failed to execute process");
     }
 }
