@@ -52,7 +52,6 @@ impl NFAGenerator {
     ) -> bool {
         match node.kind {
             AstKind::Char(c) => self.leaf_child(c, current_state, next_state),
-
             AstKind::Dot => self.leaf_dot(current_state, next_state),
             AstKind::Lambda => self.leaf_lambda(current_state, next_state),
             AstKind::Alt => self.node_alt(node, current_state, next_state),
@@ -139,6 +138,31 @@ mod tests {
         expected_t.insert((0, 'b'), 1);
 
         assert_eq!(simple.lambda_transitions, expected_l);
+        assert_eq!(simple.transitions, expected_t);
+    }
+
+    #[test]
+    fn testing_leaf_dot() {
+        let r = AstNode::new(AstKind::Dot);
+
+        let mut alpha: BTreeSet<char> = BTreeSet::new();
+        alpha.insert('a');
+        alpha.insert('b');
+        alpha.insert('c');
+        alpha.insert('d');
+        alpha.insert('e');
+
+        let mut simple = NFAGenerator::new(alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'a'), 1);
+        expected_t.insert((0, 'b'), 1);
+        expected_t.insert((0, 'c'), 1);
+        expected_t.insert((0, 'd'), 1);
+        expected_t.insert((0, 'e'), 1);
+
+        assert_eq!(simple.lambda_transitions, BTreeMap::new());
         assert_eq!(simple.transitions, expected_t);
     }
 }
