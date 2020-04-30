@@ -1,7 +1,12 @@
+use crate::alphabet_translator::*;
 use crate::ast::AstKind;
 /// This takes in a perfectly simplified Regex tree and creates an NFA
 use crate::ast::AstNode;
-use std::collections::{BTreeMap, BTreeSet};
+use std::io::prelude::*;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs::File,
+};
 
 pub struct NFAGenerator {
     // pub root: AstNode,
@@ -26,13 +31,105 @@ impl NFAGenerator {
             transitions: BTreeMap::new(),
             lambda_transitions: BTreeMap::new(),
             highest_state_number: 1,
-            alpha: alpha,
+            alpha,
         }
     }
 
-    // pub fn simplify_root(&mut self) {
-    // self.add_to_table(&xself.root, 0, 1);
-    // }
+    // Todo path should be actual path type probably
+    pub fn create_output_files(&mut self, path: &str) -> std::io::Result<()> {
+        let mut output_lines: Vec<String> = Vec::new();
+        let lambda_char = self.find_lambda_char().unwrap();
+
+        for t in &self.transitions {
+            let mut output_line = String::new();
+            let from = (t.0).0;
+            let to = t.1;
+            let all_chars_for_this_trans: Vec<char> = self
+                .transitions
+                .iter()
+                .filter(|maybe| (maybe.0).0 == from && (maybe.1) == to)
+                .map(|c| (c.0).1)
+                .collect();
+            let has_lambda = *self.lambda_transitions.get(&(from, *to)).unwrap_or(&false);
+
+            output_line.push_str(&from.to_string());
+            output_line.push_str(" ");
+            output_line.push_str(&to.to_string());
+            output_line.push_str(" ");
+
+            for char in &all_chars_for_this_trans {
+                output_line.push_str(&alphabet_translator::char_to_hex_if_whitespace(*char));
+                output_line.push_str(" ");
+            }
+
+            if has_lambda {
+                output_line.push_str(&alphabet_translator::char_to_hex_if_whitespace(lambda_char));
+
+                // remove lambda transition so when we are done with this we can print out states that only have lambda trans
+
+                self.lambda_transitions.remove(&(from, *to));
+            }
+
+            output_lines.push(output_line);
+
+            println!("All chars: {:?}", all_chars_for_this_trans);
+            println!("has lambda: {:?}", has_lambda);
+        }
+
+        for t in &self.lambda_transitions {
+            let from = (t.0).0;
+            let to = (t.0).1;
+            let mut output_line = String::new();
+
+            output_line.push_str(&from.to_string());
+            output_line.push(' ');
+            output_line.push_str(&to.to_string());
+            output_line.push(' ');
+            output_line.push(lambda_char);
+            output_lines.push(output_line);
+        }
+
+        let mut first_line = String::new();
+        first_line.push_str(&output_lines.len().to_string());
+        first_line.push(' ');
+        first_line.push(lambda_char);
+        first_line.push(' ');
+
+        let mut ordered_alpha: Vec<&char> = self.alpha.iter().collect();
+        ordered_alpha.sort();
+
+        for c in ordered_alpha.iter() {
+            first_line.push(**c);
+            first_line.push(' ');
+        }
+
+        output_lines.insert(0, first_line);
+
+        println!("Output lines: {:?}", output_lines);
+
+        let mut file = File::create(path)?;
+
+        for line in output_lines {
+            file.write_all(line.as_bytes());
+            file.write(b"\n");
+        }
+        Ok(())
+    }
+
+    pub fn find_lambda_char(&self) -> Result<char, ()> {
+        // getting the alphabet from here: https://stackoverflow.com/questions/45343345/is-there-a-simple-way-to-generate-the-lowercase-and-uppercase-english-alphabet-i
+        let alphabet = (b'A'..=b'z') // Start as u8
+            .map(|c| c as char) // Convert all to chars
+            .filter(|c| c.is_alphabetic()) // Filter only alphabetic chars
+            .collect::<Vec<_>>(); // Collect as Vec<char>
+
+        for c in &alphabet {
+            if !&self.alpha.contains(c) {
+                return Ok(*c);
+            }
+        }
+        Err(()) // this should only really happen if the alphabet is full, and I guess a panic is okay
+    }
 
     pub fn get_new_state(&mut self) -> usize {
         self.highest_state_number += 1;
@@ -111,6 +208,99 @@ impl NFAGenerator {
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
+
+    #[test]
+    fn basic_output_file() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Kleene);
+
+        let mut a = AstNode::new(AstKind::Seq);
+        a.children.push(AstNode::new(AstKind::Char('b')));
+        a.children.push(AstNode::new(AstKind::Char('c')));
+        a.children.push(AstNode::new(AstKind::Char('d')));
+        r.children.push(a);
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        // just adding thing to test output
+
+        simple.lambda_transitions.insert((0, 2), true);
+        simple.lambda_transitions.insert((3, 4), true);
+
+        simple.create_output_files("test_out.txt");
+    }
+
+    #[test]
+    fn test_simple_kleene() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Kleene);
+        r.children.push(AstNode::new(AstKind::Char('b')));
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_l = BTreeMap::new();
+        expected_l.insert((0, 1), true);
+        expected_l.insert((1, 0), true);
+
+        assert_eq!(simple.lambda_transitions, expected_l);
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'b'), 1);
+        assert_eq!(simple.transitions, expected_t);
+    }
+
+    #[test]
+    fn test_kleene_alt() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Kleene);
+
+        let mut a = AstNode::new(AstKind::Alt);
+        a.children.push(AstNode::new(AstKind::Char('b')));
+        a.children.push(AstNode::new(AstKind::Char('c')));
+        a.children.push(AstNode::new(AstKind::Char('d')));
+        r.children.push(a);
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_l = BTreeMap::new();
+        expected_l.insert((0, 1), true);
+        expected_l.insert((1, 0), true);
+
+        assert_eq!(simple.lambda_transitions, expected_l);
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'b'), 1);
+        expected_t.insert((0, 'c'), 1);
+        expected_t.insert((0, 'd'), 1);
+        assert_eq!(simple.transitions, expected_t);
+    }
+
+    #[test]
+    fn test_kleene_seq() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Kleene);
+
+        let mut a = AstNode::new(AstKind::Seq);
+        a.children.push(AstNode::new(AstKind::Char('b')));
+        a.children.push(AstNode::new(AstKind::Char('c')));
+        a.children.push(AstNode::new(AstKind::Char('d')));
+        r.children.push(a);
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_l = BTreeMap::new();
+        expected_l.insert((0, 1), true);
+        expected_l.insert((1, 0), true);
+
+        assert_eq!(simple.lambda_transitions, expected_l);
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'b'), 2);
+        expected_t.insert((2, 'c'), 3);
+        expected_t.insert((3, 'd'), 1);
+        assert_eq!(simple.transitions, expected_t);
+    }
 
     #[test]
     fn test_alt() {
