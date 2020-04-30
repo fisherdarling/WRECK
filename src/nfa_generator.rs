@@ -1,5 +1,7 @@
+use crate::ast::AstKind;
 /// This takes in a perfectly simplified Regex tree and creates an NFA
-use ast::AstNode;
+use crate::ast::AstNode;
+use std::collections::BTreeMap;
 
 pub struct NFAGenerator {
     pub root: AstNode,
@@ -12,32 +14,34 @@ pub struct NFAGenerator {
     // same pattern as transitions, but top is number not char?
     pub lambdaTransitions: BTreeMap<(usize, usize), usize>,
 
-    currentState: usize,
-    nextState: usize,
+    pub currentState: usize,
+    pub nextState: usize,
 }
 
 impl NFAGenerator {
     pub fn new(root: AstNode) -> Self {
         Self {
             root: root,
-            transitions: BTreeMap::new,
+            transitions: BTreeMap::new(),
+            lambdaTransitions: BTreeMap::new(),
             currentState: 0,
             nextState: 0,
         }
     }
 
     /// Returns weather or not a change has been made
-    pub fn addToTable(node: AstNode) -> bool {
+    pub fn addToTable(&mut self, node: &AstNode) -> bool {
         match node {
-            Seq -> {
-                if node.transitions.len() == 1 {
-                    let child = node.transitions[0];
-                    match child {
-                        Char(c) => {
+            Seq => {
+                if node.children.len() == 1 {
+                    let child = &node.children[0];
+                    match child.kind {
+                        AstKind::Char(c) => {
                             // leafChild case
-                            self.transitions.insert((self.currentState, c), self.nextState)
+                            self.transitions
+                                .insert((self.currentState, c.clone()), self.nextState);
                         }
-                        _ => {todo!()}
+                        _ => todo!(),
                     }
                 }
             }
