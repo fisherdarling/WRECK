@@ -124,6 +124,68 @@ impl CFG {
         }
     }
 
+    pub fn follow(
+        &self,
+        nt: &NonTerminal,
+        mut t: BTreeSet<Symbol>,
+    ) -> (BTreeSet<Terminal>, BTreeSet<Symbol>) {
+        let symbol = Symbol::from_non_terminal(nt.clone());
+
+        if t.contains(&symbol) {
+            return (BTreeSet::new(), t);
+        }
+
+        t.insert(symbol.clone());
+
+        let mut f: BTreeSet<Terminal> = BTreeSet::new();
+
+        for (index, production) in self.productions.iter().enumerate() {
+            // If this production contains the symbol:
+            if let Some(index) = production.index_of(&symbol) {
+                let rest = if index + 1 == production.symbols().len() {
+                    &[]
+                } else {
+                    &production.symbols()[index + 1..]
+                };
+
+                if !rest.is_empty() {
+                    let (g, _i) = self.first(rest, BTreeSet::new());
+                    f.extend(g.into_iter());
+                }
+
+                if !rest.is_empty()
+                    || (!self.contains_terminal(rest)
+                        && rest.iter().all(|s| {
+                            self.derives_to_lambda(s.non_terminal().unwrap(), &mut Vec::new())
+                        }))
+                {
+                    let lhs_of_production = self
+                        .production_map
+                        .iter()
+                        .find_map(|(k, v)| if v.contains(&index) { Some(k) } else { None })
+                        .expect("There must be a NonTerminal for a given production");
+
+                    let (g, _s) = self.follow(lhs_of_production, t.clone());
+                    f.extend(g.into_iter());
+                }
+            }
+        }
+
+        (f, t)
+    }
+
+    pub fn predict_set(&self, nt: &NonTerminal, production: &Production) -> BTreeSet<Terminal> {
+        if production.only_lambda() {
+            self.follow(nt, BTreeSet::new()).0
+        } else {
+            self.first(production.symbols(), BTreeSet::new()).0
+        }
+    }
+
+    fn contains_terminal(&self, symbols: &[Symbol]) -> bool {
+        symbols.iter().any(Symbol::is_terminal)
+    }
+
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let mut cfg = CFG::new();
 
@@ -156,6 +218,12 @@ impl CFG {
         while let Some(Ok(line)) = lines.next().map(Line::from_str) {
             match line {
                 Line::Start(new_nt, new_productions) => {
+                    for symbol in &new_productions {
+                        if symbol.terminal().is_ok() {
+                            cfg.terminals.insert(symbol.terminal().unwrap().clone());
+                        }
+                    }
+
                     let production: Production = new_productions.into();
                     cfg.productions.push(production);
                     let production_idx = cfg.productions.len() - 1;
@@ -216,7 +284,7 @@ impl Line {
     }
 
     pub fn from_str(input: String) -> Result<Line> {
-        println!("From Str: {:?}", input);
+        // println!("From Str: {:?}", input);
 
         let mut split: Vec<&str> = input.trim().split(' ').collect();
 

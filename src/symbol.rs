@@ -3,6 +3,7 @@ use anyhow::{anyhow, Result};
 // use derive_more::{AsMut, AsRef, Deref, DerefMut, From, Index, Into};
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::fmt;
 
 lazy_static! {
     static ref SYMBOL: Regex =
@@ -10,7 +11,7 @@ lazy_static! {
             .unwrap();
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Terminal(String);
 
 impl Terminal {
@@ -35,7 +36,13 @@ impl From<String> for Terminal {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+impl fmt::Debug for Terminal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.terminal())
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NonTerminal(String);
 
 impl NonTerminal {
@@ -57,6 +64,12 @@ impl AsRef<str> for NonTerminal {
 impl From<String> for NonTerminal {
     fn from(e: String) -> Self {
         Self(e)
+    }
+}
+
+impl fmt::Debug for NonTerminal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.non_terminal())
     }
 }
 
@@ -126,6 +139,14 @@ impl Symbol {
 
     pub fn is_lambda(&self) -> bool {
         Symbol::Lambda == *self
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Terminal(t) => t.terminal(),
+            Self::NonTerminal(nt) => nt.non_terminal(),
+            Self::Lambda => "lambda",
+        }
     }
 }
 

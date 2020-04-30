@@ -1,5 +1,6 @@
 use crate::symbol::Symbol;
 use derive_more::{From, Index};
+use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Index, From)]
 pub struct Production(Vec<Symbol>);
@@ -23,5 +24,15 @@ impl Production {
 
     pub fn symbols(&self) -> &[Symbol] {
         &self.0
+    }
+}
+
+impl fmt::Display for Production {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for symbol in self.0.iter() {
+            write!(f, "{} ", symbol.as_str())?;
+        }
+
+        Ok(())
     }
 }
