@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 
 use wreck::cfg::CFG;
+use wreck::ll_table::LLTable;
+use wreck::parser::Parser;
 
 fn main() -> anyhow::Result<()> {
     let cfg = CFG::from_file("llre.cfg").unwrap();
@@ -34,24 +36,53 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     println!("Predict Sets:");
-    for nt in &cfg.non_terminals {
-        for production_index in &cfg.production_map[nt] {
-            let production = &cfg.productions[*production_index];
-            let predict_set = cfg.predict_set(nt, production);
+    for (i, production) in cfg.productions.iter().enumerate() {
+        let nt = cfg
+            .production_map
+            .iter()
+            .find(|(_, v)| v.contains(&i))
+            .map(|(k, _)| k)
+            .expect("A production must have a left hand side.");
 
-            println!("{: <8}: {:?}", nt.non_terminal(), predict_set);
-        }
+        println!(
+            "[{:>2}] {: <8} -> {:?}",
+            i,
+            nt.non_terminal(),
+            cfg.predict_set(nt, production)
+        );
     }
+    // for nt in &cfg.non_terminals {
+    //     for production_index in &cfg.production_map[nt] {
+    //         let production = &cfg.productions[*production_index];
+    //         let predict_set = cfg.predict_set(nt, production);
+
+    //         println!("{: <8}: {:?}", nt.non_terminal(), predict_set);
+    //     }
+    // }
 
     println!();
 
-    let table = wreck::ll_table::LLTable::from_cfg(&cfg);
+    let table = LLTable::from_cfg(&cfg);
     print_table(&cfg, &table);
+
+    println!();
+    println!();
+    println!();
+
+    let regex = "Ab(cd-e+)*(.|012)3";
+    println!("Parsing Regex: {}", regex);
+
+    let mut lexer = silly_lex::Lexer::new(&regex).iter();
+
+    let mut parser = Parser::new(&cfg, &table);
+    let tree = parser.parse(&mut lexer.peekable());
+
+    tree.export_graph("regex.dot");
 
     Ok(())
 }
 
-fn print_table(cfg: &CFG, lltable: &wreck::ll_table::LLTable) {
+fn print_table(cfg: &CFG, lltable: &LLTable) {
     println!("Productions:");
 
     for (i, production) in cfg.productions.iter().enumerate() {

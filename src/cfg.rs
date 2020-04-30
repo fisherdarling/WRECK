@@ -175,11 +175,24 @@ impl CFG {
     }
 
     pub fn predict_set(&self, nt: &NonTerminal, production: &Production) -> BTreeSet<Terminal> {
-        if production.only_lambda() {
-            self.follow(nt, BTreeSet::new()).0
-        } else {
-            self.first(production.symbols(), BTreeSet::new()).0
+        // if production.only_lambda() {
+        //     self.follow(nt, BTreeSet::new()).0
+        // } else {
+        let (mut follow, _s) = self.first(production.symbols(), BTreeSet::new());
+
+        if !production.contains_terminal()
+            && (production.symbols()[0] == Symbol::Lambda
+                || production
+                    .symbols()
+                    .iter()
+                    .all(|s| self.derives_to_lambda(s.non_terminal().unwrap(), &mut Vec::new())))
+        {
+            follow.extend(self.follow(nt, BTreeSet::new()).0.into_iter());
         }
+        // if self.derives_to_lambda(nt, stack)
+
+        follow
+        // }
     }
 
     fn contains_terminal(&self, symbols: &[Symbol]) -> bool {
@@ -212,6 +225,7 @@ impl CFG {
             .push(production_idx);
 
         cfg.non_terminals.insert(start.clone());
+
         // Set the CFG start symbol
         cfg.start_symbol = start.clone();
 
