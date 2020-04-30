@@ -1,12 +1,12 @@
 use crate::symbol::NonTerminal;
-use silly_lex::Token;
-use std::mem;
+use petgraph::dot::{Config, Dot};
 use petgraph::Graph;
-use petgraph::dot::{Dot, Config};
+use silly_lex::Token;
+use std::fmt;
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::fmt;
+use std::mem;
+use std::path::Path;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AstKind {
@@ -87,6 +87,27 @@ impl AstKind {
         })
     }
 
+    pub fn as_str(&self) -> &str {
+        match self {
+            AstKind::Regex => "RE",
+            AstKind::Alt => "ALT",
+            AstKind::AltList => "ALTLIST",
+            AstKind::Seq => "SEQ",
+            AstKind::SeqList => "SEQLIST",
+            AstKind::Atom => "ATOM",
+            AstKind::Nucleus => "NUCLEUS",
+            AstKind::CharRng => "CHARRNG",
+            AstKind::AtomMod => "ATOMMOD",
+            AstKind::Kleene => "kleene",
+            AstKind::Plus => "plus",
+            AstKind::Lambda => "lambda",
+            AstKind::Dot => "dot",
+            AstKind::Char(_) => "char",
+        }
+    }
+
+    // pub fn token_type(&self) -> TokenKind {}
+
     pub fn is_terminal(&self) -> bool {
         match self {
             AstKind::Regex => false,
@@ -105,6 +126,10 @@ impl AstKind {
             AstKind::Char(_) => true,
         }
     }
+
+    pub fn is_non_terminal(&self) -> bool {
+        !self.is_terminal()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -121,12 +146,13 @@ impl AstNode {
         }
     }
 
-    // Export a graph to something that Graphvis can us 
+    // Export a graph to something that Graphvis can us
     pub fn export_graph(&self, file_path: impl AsRef<Path>) {
         let graph = self.create_pet_graph();
         let mut f = File::create(file_path).unwrap();
         let output = format!("{}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
-        f.write_all(&output.as_bytes()).expect("could not write file");
+        f.write_all(&output.as_bytes())
+            .expect("could not write file");
     }
 
     fn create_pet_graph(&self) -> Graph<AstKind, usize> {
@@ -141,11 +167,16 @@ impl AstNode {
         graph
     }
 
-    fn create_pet_graph_rec(&self, mut graph: Graph<AstKind, usize>, node: &AstNode, parent: petgraph::graph::NodeIndex) -> Graph <AstKind, usize> {
+    fn create_pet_graph_rec(
+        &self,
+        mut graph: Graph<AstKind, usize>,
+        node: &AstNode,
+        parent: petgraph::graph::NodeIndex,
+    ) -> Graph<AstKind, usize> {
         for child in node.children.iter() {
             let cnode = graph.add_node(child.kind);
             graph.add_edge(parent, cnode, 0);
-            
+
             graph = self.create_pet_graph_rec(graph, child, cnode);
         }
         graph
@@ -283,8 +314,8 @@ pub fn simplify_seq_list(node: &AstNode) -> AstNode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::process::Command;
     use std::fs::create_dir;
+    use std::process::Command;
 
     #[test]
     fn simple_graphing() {
@@ -310,12 +341,12 @@ mod tests {
         let path = PathBuf::from("test_output/simple.dot");
         r.export_graph(path);
         Command::new("dot")
-                .arg("-Tpng")
-                .arg("test_output/simple.dot")
-                .arg("-o")
-                .arg("test_output/simple.png")
-                .output()
-                .expect("failed to execute process");
+            .arg("-Tpng")
+            .arg("test_output/simple.dot")
+            .arg("-o")
+            .arg("test_output/simple.png")
+            .output()
+            .expect("failed to execute process");
     }
 
     #[test]
@@ -391,21 +422,21 @@ mod tests {
         let path = PathBuf::from("test_output/concrete.dot");
         y.export_graph(path);
         Command::new("dot")
-                .arg("-Tpng")
-                .arg("test_output/concrete.dot")
-                .arg("-o")
-                .arg("test_output/concrete.png")
-                .output()
-                .expect("failed to execute process");
+            .arg("-Tpng")
+            .arg("test_output/concrete.dot")
+            .arg("-o")
+            .arg("test_output/concrete.png")
+            .output()
+            .expect("failed to execute process");
 
         let simple = simplify_RE(&y);
         simple.export_graph("test_output/AST.dot");
         Command::new("dot")
-                .arg("-Tpng")
-                .arg("test_output/AST.dot")
-                .arg("-o")
-                .arg("test_output/AST.png")
-                .output()
-                .expect("failed to execute process");
+            .arg("-Tpng")
+            .arg("test_output/AST.dot")
+            .arg("-o")
+            .arg("test_output/AST.png")
+            .output()
+            .expect("failed to execute process");
     }
 }
