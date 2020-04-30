@@ -64,6 +64,8 @@ impl AstKind {
             "dot" => AstKind::Dot,
             "kleene" => AstKind::Kleene,
             "plus" => AstKind::Plus,
+            // "open" => AstKind::Char('\0'),
+            // "close" => AstKind::Char('\0'),
             _ => None?,
         })
     }

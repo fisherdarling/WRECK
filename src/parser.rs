@@ -45,20 +45,23 @@ impl<'c, 't> Parser<'c, 't> {
         stream: &mut Peekable<impl Iterator<Item = Token>>,
         terminal: &Terminal,
     ) -> Option<AstNode> {
-        println!("Parsing Terminal: {:?} <- {:?}", terminal, stream.peek());
+        // println!("Parsing Terminal: {:?} <- {:?}", terminal, stream.peek());
 
         if let Some(token) = stream.peek() {
             if token.kind.to_string() == terminal.terminal() {
                 let next = stream.next()?;
 
-                return if terminal.terminal() == "char" {
-                    let node = AstNode::new(AstKind::Char(next.data.chars().next().unwrap()));
+                return match terminal.terminal() {
+                    "char" | "open" | "close" | "dash" => {
+                        let node = AstNode::new(AstKind::Char(next.data.chars().next().unwrap()));
 
-                    Some(node)
-                } else {
-                    // If we should make a node from it (e.g. Kleene or Plus) then do it,
-                    // else return None
-                    Some(AstNode::new(AstKind::from_str(terminal.terminal())?))
+                        Some(node)
+                    }
+                    _ => {
+                        // If we should make a node from it (e.g. Kleene or Plus) then do it,
+                        // else return None
+                        Some(AstNode::new(AstKind::from_str(terminal.terminal())?))
+                    }
                 };
             }
         }
@@ -71,7 +74,7 @@ impl<'c, 't> Parser<'c, 't> {
         mut stream: &mut Peekable<impl Iterator<Item = Token>>,
         non_terminal: &NonTerminal,
     ) -> AstNode {
-        println!("Parsing NT: {:?} <- {:?}", non_terminal, stream.peek());
+        // println!("Parsing NT: {:?} <- {:?}", non_terminal, stream.peek());
 
         let mut node = AstNode::new(
             AstKind::from_str(non_terminal.non_terminal()).expect("Expected a non_terminal"),
