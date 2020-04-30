@@ -50,11 +50,15 @@ impl NFAGenerator {
             AstKind::Char(c) => {
                 self.insert_to_trans(current_state, next_state, c.clone());
             }
-            AstKind::Seq => {
-                todo!();
-            }
+            AstKind::Dot => self.leaf_dot(current_state, next_state),
             _ => todo!(),
         }
         false
+    }
+
+    pub fn leaf_dot(&mut self, this: usize, next: usize) {
+        for c in &self.alpha {
+            self.insert_to_trans(this, next, c.clone());
+        }
     }
 }
