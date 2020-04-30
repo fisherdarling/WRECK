@@ -165,4 +165,22 @@ mod tests {
         assert_eq!(simple.lambda_transitions, BTreeMap::new());
         assert_eq!(simple.transitions, expected_t);
     }
+
+    #[test]
+    fn test_seq() {
+        let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
+        let mut r = AstNode::new(AstKind::Seq);
+        r.children.push(AstNode::new(AstKind::Char('b')));
+        r.children.push(AstNode::new(AstKind::Char('c')));
+
+        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        simple.add_to_table(&r, 0, 1);
+
+        let mut expected_t = BTreeMap::new();
+        expected_t.insert((0, 'b'), 1);
+        expected_t.insert((1, 'c'), 2);
+
+        assert_eq!(simple.lambda_transitions, BTreeMap::new());
+        assert_eq!(simple.transitions, expected_t);
+    }
 }
