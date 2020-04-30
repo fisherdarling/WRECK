@@ -28,7 +28,12 @@ pub enum AstKind {
 
 impl fmt::Display for AstKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            AstKind::Char(c) => write!(f, "{}", c),
+            AstKind::Kleene => write!(f, "*"),
+            AstKind::Dot => write!(f, "."),
+            _ => write!(f, "{:?}", self),
+        }
         // or, alternatively:
         // fmt::Debug::fmt(self, f)
     }
