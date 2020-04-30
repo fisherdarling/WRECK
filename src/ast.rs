@@ -30,22 +30,21 @@ pub enum Mod {
     Lambda,
 }
 
+// simplify a node and all children
 pub fn simplify_to_ast(node: AstNode) -> AstNode {
-    for child in node.children.into_iter() {
-        match child.kind {
-            AstKind::Regex => simplify_regex(child),
-            AstKind::Atom => simplify_atom(child),
-            AstKind::Seq => simplify_seq(child),
-            AstKind::SeqList => simplify_seq_list(child),
-            AstKind::CharRng => simplify_char_rng(child),
-            _ => (),
-        };
+    match node.kind {
+        AstKind::Regex => simplify_regex(node),
+        AstKind::Atom => simplify_atom(node),
+        AstKind::Seq => simplify_seq(node),
+        AstKind::SeqList => simplify_seq_list(node),
+        AstKind::CharRng => simplify_char_rng(node),
+        _ => node,
     }
-    node
 }
 
 pub fn simplify_regex(node: AstNode) -> AstNode {
-    todo!()
+    simplify_to_ast(node.children[0]);
+    node.children[0]
 }
 
 pub fn simplify_atom(node: AstNode) -> AstNode {
