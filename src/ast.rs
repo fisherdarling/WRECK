@@ -85,6 +85,10 @@ impl AstKind {
             AstKind::Char(_) => true,
         }
     }
+
+    pub fn is_non_terminal(&self) -> bool {
+        !self.is_terminal()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
