@@ -1,3 +1,4 @@
+use crate::symbol::NonTerminal;
 use silly_lex::Token;
 use std::mem;
 
@@ -15,6 +16,7 @@ pub enum AstKind {
     Plus,
     Lambda,
     Dot,
+    AtomMod,
     Char(char),
 }
 
@@ -24,6 +26,63 @@ impl AstKind {
             Ok(*c)
         } else {
             Err(anyhow::anyhow!("AstKind was not a Char"))
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<AstKind> {
+        Some(match s {
+            "RE" => AstKind::Regex,
+            "ALT" => AstKind::Alt,
+            "ALTLIST" => AstKind::AltList,
+            "SEQ" => AstKind::Seq,
+            "SEQLIST" => AstKind::SeqList,
+            "ATOM" => AstKind::Atom,
+            "ATOMMOD" => AstKind::AtomMod,
+            "NUCLEUS" => AstKind::Nucleus,
+            "CHARRNG" => AstKind::CharRng,
+            "char" => AstKind::Char('\0'),
+            "dot" => AstKind::Dot,
+            "kleene" => AstKind::Kleene,
+            "plus" => AstKind::Plus,
+            _ => None?,
+        })
+    }
+
+    pub fn as_nt(&self) -> Option<&str> {
+        Some(match self {
+            AstKind::Regex => "RE",
+            AstKind::Alt => "ALT",
+            AstKind::AltList => "ALTLIST",
+            AstKind::Seq => "SEQ",
+            AstKind::SeqList => "SEQLIST",
+            AstKind::Atom => "ATOM",
+            AstKind::Nucleus => "NUCLEUS",
+            AstKind::CharRng => "CHARRNG",
+            AstKind::AtomMod => "ATOMMOD",
+            AstKind::Kleene => None?,
+            AstKind::Plus => None?,
+            AstKind::Lambda => None?,
+            AstKind::Dot => None?,
+            AstKind::Char(_) => None?,
+        })
+    }
+
+    pub fn is_terminal(&self) -> bool {
+        match self {
+            AstKind::Regex => false,
+            AstKind::Alt => false,
+            AstKind::AltList => false,
+            AstKind::Seq => false,
+            AstKind::SeqList => false,
+            AstKind::Atom => false,
+            AstKind::Nucleus => false,
+            AstKind::CharRng => false,
+            AstKind::AtomMod => false,
+            AstKind::Kleene => true,
+            AstKind::Plus => true,
+            AstKind::Lambda => true,
+            AstKind::Dot => true,
+            AstKind::Char(_) => true,
         }
     }
 }
