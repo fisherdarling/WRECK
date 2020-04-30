@@ -43,8 +43,7 @@ pub fn simplify_to_ast(node: AstNode) -> AstNode {
 }
 
 pub fn simplify_regex(node: AstNode) -> AstNode {
-    simplify_to_ast(node.children[0]);
-    node.children[0]
+    simplify_to_ast(node.children[0].clone())
 }
 
 pub fn simplify_atom(node: AstNode) -> AstNode {
