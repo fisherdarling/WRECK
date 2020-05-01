@@ -299,6 +299,10 @@ pub fn simplify_seq(node: &AstNode) -> AstNode {
 
     new_seq.children.append(&mut atom.children);
     new_seq.children.append(&mut seqlist.children);
+    
+    if new_seq.children.len() == 1 {
+        return new_seq.children.pop().unwrap();
+    }
 
     new_seq
 }
