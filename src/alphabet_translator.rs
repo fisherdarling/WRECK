@@ -33,6 +33,7 @@ pub mod alphabet_translator {
             ' ' => String::from("x20"),
             '\n' => String::from("x0a"),
             '\\' => String::from("x5c"),
+            '\t' => String::from("x09"),
             _ => String::from(c.to_string()),
         }
     }
