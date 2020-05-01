@@ -18,25 +18,33 @@ pub struct NFAGenerator {
 
     // same pattern as transitions, but top is number not char?
     pub lambda_transitions: BTreeMap<(usize, usize), bool>,
-
     pub highest_state_number: usize,
-
     pub alpha: BTreeSet<char>,
+    pub token_id: Option<String>,
 }
 
 impl NFAGenerator {
-    pub fn new(alpha: BTreeSet<char>) -> Self {
+    /// `alpha` is Alphabet, `token_id` is the name of the regex (and will be name of output file)
+    pub fn new(alpha: BTreeSet<char>, token_id: Option<String>) -> Self {
         Self {
             // root: root,
             transitions: BTreeMap::new(),
             lambda_transitions: BTreeMap::new(),
             highest_state_number: 1,
             alpha,
+            token_id,
         }
     }
 
     // Todo path should be actual path type probably
-    pub fn create_output_files(&mut self, path: &str) -> std::io::Result<()> {
+    pub fn create_output_files(&mut self) -> std::io::Result<()> {
+        self.create_nfa()?;
+        Ok(())
+    }
+
+    pub fn create_nfa(&mut self) -> std::io::Result<()> {
+        let mut path = self.token_id.clone().unwrap(); // will panic if token_id is nothing
+        path.push_str(".nfa");
         let mut output_lines: Vec<String> = Vec::new();
         let lambda_char = self.find_lambda_char().unwrap();
 
@@ -232,7 +240,7 @@ mod tests {
         a.children.push(AstNode::new(AstKind::Char('d')));
         r.children.push(a);
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, Some(String::from("simple")));
         simple.add_to_table(&r, 0, 1);
 
         // just adding thing to test output
@@ -240,7 +248,7 @@ mod tests {
         simple.lambda_transitions.insert((0, 2), true);
         simple.lambda_transitions.insert((3, 4), true);
 
-        simple.create_output_files("test_out.txt");
+        simple.create_output_files();
     }
 
     #[test]
@@ -249,7 +257,7 @@ mod tests {
         let mut r = AstNode::new(AstKind::Kleene);
         r.children.push(AstNode::new(AstKind::Char('b')));
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_l = BTreeMap::new();
@@ -273,7 +281,7 @@ mod tests {
         a.children.push(AstNode::new(AstKind::Char('d')));
         r.children.push(a);
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_l = BTreeMap::new();
@@ -299,7 +307,7 @@ mod tests {
         a.children.push(AstNode::new(AstKind::Char('d')));
         r.children.push(a);
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_l = BTreeMap::new();
@@ -322,7 +330,7 @@ mod tests {
         r.children.push(AstNode::new(AstKind::Char('c')));
         r.children.push(AstNode::new(AstKind::Char('d')));
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_t = BTreeMap::new();
@@ -338,7 +346,7 @@ mod tests {
         let r = AstNode::new(AstKind::Lambda);
         let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_l = BTreeMap::new();
@@ -356,7 +364,7 @@ mod tests {
 
         let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let expected_l = BTreeMap::new();
@@ -375,7 +383,7 @@ mod tests {
 
         let a_to_e_alpha: BTreeSet<char> = ['a', 'b', 'c', 'd', 'e'].iter().cloned().collect();
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_t = BTreeMap::new();
@@ -396,7 +404,7 @@ mod tests {
         r.children.push(AstNode::new(AstKind::Char('b')));
         r.children.push(AstNode::new(AstKind::Char('c')));
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_t = BTreeMap::new();
@@ -416,7 +424,7 @@ mod tests {
         r.children.push(AstNode::new(AstKind::Char('d')));
         r.children.push(AstNode::new(AstKind::Char('e')));
 
-        let mut simple = NFAGenerator::new(a_to_e_alpha);
+        let mut simple = NFAGenerator::new(a_to_e_alpha, None);
         simple.add_to_table(&r, 0, 1);
 
         let mut expected_t = BTreeMap::new();
