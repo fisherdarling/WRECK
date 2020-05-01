@@ -208,6 +208,10 @@ impl NFAGenerator {
 
     pub fn node_seq(&mut self, node: &AstNode, this: usize, next: usize) {
         // println!("in node seq");
+        if node.children.len() == 1 {
+            self.add_to_table(&node.children[0], this, next);
+            return;
+        }
         let new_states: Vec<usize> = (0..node.children.len() - 1)
             .map(|_| self.get_new_state())
             .collect();
@@ -216,6 +220,7 @@ impl NFAGenerator {
         for i in 1..node.children.len() - 1 {
             self.add_to_table(&node.children[i], new_states[i - 1], new_states[i]);
         }
+
         self.add_to_table(
             node.children.last().unwrap(),
             *new_states.last().unwrap(),
