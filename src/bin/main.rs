@@ -20,6 +20,9 @@ fn main() {
     let args = Args::from_args();
 
     let config = LexerConfig::from_file(args.input);
+
+    println!("Alphabet: {:?}\n", config.alphabet);
+
     glue(&config);
 }
 

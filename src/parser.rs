@@ -53,7 +53,7 @@ impl<'c, 't> Parser<'c, 't> {
 
                 return match terminal.terminal() {
                     "char" | "open" | "close" | "dash" | "pipe" => {
-                        let node = AstNode::new(AstKind::Char(next.data.chars().next().unwrap()));
+                        let node = AstNode::new(AstKind::Char(get_char(&next.data)));
 
                         Some(node)
                     }
@@ -177,6 +177,27 @@ impl<'c, 't> Parser<'c, 't> {
 
     //     None
     // }
+}
+
+fn get_char(data: &str) -> char {
+    decode_char(&mut data.chars()).unwrap()
+}
+
+fn decode_char(chars: &mut dyn Iterator<Item = char>) -> Option<char> {
+    Some(match chars.next()? {
+        'x' => {
+            let first = chars.next()?;
+            let second = chars.next()?;
+            let mut first = first.to_string();
+            first.push(second);
+
+            let value: u32 = u32::from_str_radix(&first, 16).unwrap();
+            let char = std::char::from_u32(value).unwrap();
+
+            char
+        }
+        c => c,
+    })
 }
 
 // if let Some(token) = stream.peek() {
