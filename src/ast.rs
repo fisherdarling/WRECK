@@ -189,13 +189,15 @@ pub fn simplify_RE(root_node: &AstNode) -> AstNode {
     simplify_alt(&root_node.children[0])
 }
 
-pub fn simplify_plus(node: AstNode) -> AstNode {
+pub fn simplify_plus(mut node: AstNode) -> AstNode {
+    println!("Hi");
     let mut new_seq = AstNode::new(AstKind::Seq);
     let mut kleene = AstNode::new(AstKind::Kleene);
-    let copy = node.clone();
-    new_seq.children.push(node);
+    let mut copy = node.clone();
+    kleene.children.append(&mut node.children);
+    new_seq.children.append(&mut copy.children);
     new_seq.children.push(kleene);
-    new_seq.children[1].children.push(copy);
+
     new_seq
 }
 
@@ -209,15 +211,15 @@ pub fn simplify_atom(atom_node: &AstNode) -> AstNode {
             kleene.children.append(&mut nucleus.children);
             new_atom.children.push(kleene);
             new_atom
-        }
+        },
         AstKind::Plus => {
             new_atom.children.push(simplify_plus(nucleus));
             new_atom
-        }
+        },
         AstKind::Lambda => {
             new_atom.children.append(&mut nucleus.children);
             new_atom
-        }
+        },
         _ => panic!("Bad Atom Mod"),
     }
 }
@@ -259,7 +261,7 @@ pub fn simplify_alt(alt_node: &AstNode) -> AstNode {
     let mut seq = simplify_seq(&alt_node.children[0]);
     let mut alt = simplify_alt_list(&alt_node.children[1]);
 
-    if alt.children.len() == 1 {
+    if alt_node.children[1].children.len() == 1 {
         return seq;
     }
 
@@ -272,14 +274,13 @@ pub fn simplify_alt(alt_node: &AstNode) -> AstNode {
 pub fn simplify_alt_list(altlist_node: &AstNode) -> AstNode {
     let mut new_alt = AstNode::new(AstKind::Alt);
     if (altlist_node.children.len() == 1) {
-        new_alt.children.push(AstNode::new(AstKind::Lambda));
         return new_alt;
     }
 
     let mut seq = simplify_seq(&altlist_node.children[1]);
     let mut alt = simplify_alt_list(&altlist_node.children[2]);
 
-    new_alt.children.append(&mut seq.children);
+    new_alt.children.push(seq);
     new_alt.children.append(&mut alt.children);
 
     new_alt
