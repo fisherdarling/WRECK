@@ -24,10 +24,24 @@ impl LexerConfig {
         let alpha_line = lines.next().unwrap();
         let alphabet = parse_alphabet(alpha_line);
 
-        println!("Alpha: {:?}", alphabet);
+        let regexes = lines.into_iter().map(parse_regex).collect();
+
+        config.alphabet = alphabet;
+        config.regexes = regexes;
 
         config
     }
+}
+
+fn parse_regex(line: String) -> (Regex, ID, TokenOut) {
+    let line = line.trim();
+    let mut split = line.split_ascii_whitespace();
+
+    let regex = split.next().unwrap().to_string();
+    let id = split.next().unwrap().to_string();
+    let token_out = split.next().map(ToOwned::to_owned);
+
+    (regex, id, token_out)
 }
 
 fn parse_alphabet(line: String) -> BTreeSet<char> {
@@ -50,12 +64,8 @@ fn decode_char(chars: &mut dyn Iterator<Item = char>) -> Option<char> {
             let mut first = first.to_string();
             first.push(second);
 
-            println!("First: {}", first);
             let value: u32 = u32::from_str_radix(&first, 16).unwrap();
-            println!("Value: {}", value);
-            let char = std::char::from_digit(value, 10).unwrap();
-
-            println!("{:?}", char);
+            let char = std::char::from_u32(value).unwrap();
 
             char
         }

@@ -20,6 +20,11 @@ fn main() {
     let args = Args::from_args();
 
     let config = LexerConfig::from_file(args.input);
+
+    println!("Alpha:\n{:?}\n", config.alphabet);
+
+    println!("Regexes:");
+    config.regexes.iter().for_each(|r| println!("{:?}", r));
 }
 
 fn print_table(cfg: &CFG, lltable: &LLTable) {
