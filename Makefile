@@ -8,7 +8,6 @@ clean_out:
 	rm -f *.dot
 	rm -f *.nfa
 	rm -f test_out.txt
-clean:
+clean: clean_out
 	cargo clean
-	rm WRECK
-	clean_out
+	rm -f WRECK
