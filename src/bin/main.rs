@@ -6,6 +6,9 @@ use wreck::ll_table::LLTable;
 use wreck::nfa_generator::NFAGenerator;
 use wreck::parser::Parser;
 
+use std::collections::BTreeSet;
+use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -24,11 +27,14 @@ fn main() {
 
     println!("Alphabet: {:?}\n", config.alphabet);
 
-    glue(&config);
+    glue(&config, args.output);
 }
 
 // TODO this should probably be moved to main, just doing it here so we don't get merge conflicts
-fn glue(config: &LexerConfig) {
+fn glue(config: &LexerConfig, output: impl AsRef<std::path::Path>) {
+    let mut output = File::create(output).unwrap();
+    write_alphabet(&mut output, &config.alphabet);
+
     let cfg = CFG::from_file("llre.cfg").unwrap(); // TODO this is the only input, right?
     let table = LLTable::from_cfg(&cfg);
     for input_line in &config.regexes {
@@ -51,10 +57,29 @@ fn glue(config: &LexerConfig) {
         let mut generator = NFAGenerator::new(config.alphabet.clone(), Some(input_line.1.clone()));
         // TODO these could probably be mixed together into a single 'generate' command
         generator.add_to_table(&simplified, 0, 1);
-        generator.create_nfa();
+        generator.create_nfa().unwrap();
+
+        writeln!(
+            output,
+            "{}.tt\t{}\t{}",
+            input_line.1,
+            input_line.1,
+            input_line.2.as_deref().unwrap_or("")
+        )
+        .unwrap();
     }
 
+    output.flush().unwrap();
+
     // let simplified = wreck::ast::simplify_RE(&tree);
+}
+
+fn write_alphabet(out: &mut dyn Write, alpha: &BTreeSet<char>) {
+    for c in alpha {
+        write!(out, "x{:02X}", *c as u8).unwrap();
+    }
+
+    writeln!(out).unwrap();
 }
 
 fn print_table(cfg: &CFG, lltable: &LLTable) {
