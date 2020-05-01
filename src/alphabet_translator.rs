@@ -29,13 +29,10 @@ pub mod alphabet_translator {
 
     pub fn char_to_hex_if_whitespace(c: char) -> String {
         // TODO are there more whitspaces?
-        match c {
-            ' ' => String::from("x20"),
-            '\n' => String::from("x0a"),
-            '\\' => String::from("x5c"),
-            '\t' => String::from("x09"),
-            _ => String::from(c.to_string()),
+        if c.is_ascii_whitespace() || c == '\\' {
+            return char_to_hex(c);
         }
+        c.to_string()
     }
 }
 
@@ -47,8 +44,8 @@ mod test {
     fn char_to_hex_tests() {
         assert_eq!("a", alphabet_translator::char_to_hex_if_whitespace('a'));
         assert_eq!("x20", alphabet_translator::char_to_hex_if_whitespace(' '));
-        assert_eq!("x0a", alphabet_translator::char_to_hex_if_whitespace('\n'));
-        assert_eq!("x5c", alphabet_translator::char_to_hex_if_whitespace('\\'));
+        assert_eq!("x0A", alphabet_translator::char_to_hex_if_whitespace('\n'));
+        assert_eq!("x5C", alphabet_translator::char_to_hex_if_whitespace('\\'));
         assert_eq!("k", alphabet_translator::char_to_hex_if_whitespace('k'));
     }
     #[test]
