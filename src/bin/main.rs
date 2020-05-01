@@ -3,6 +3,7 @@
 use wreck::cfg::CFG;
 use wreck::input::LexerConfig;
 use wreck::ll_table::LLTable;
+use wreck::nfa_generator::NFAGenerator;
 use wreck::parser::Parser;
 
 use std::path::PathBuf;
@@ -31,6 +32,7 @@ fn glue(config: &LexerConfig) {
     let cfg = CFG::from_file("llre.cfg").unwrap(); // TODO this is the only input, right?
     let table = LLTable::from_cfg(&cfg);
     for input_line in &config.regexes {
+        println!("working on {}", input_line.1);
         let mut lexer = silly_lex::Lexer::new(&input_line.0).iter();
         let mut parser = Parser::new(&cfg, &table);
         let tree = parser.parse(&mut lexer.peekable());
@@ -45,6 +47,11 @@ fn glue(config: &LexerConfig) {
         simplified_dot_output.push_str("_simple.dot");
 
         simplified.export_graph(&simplified_dot_output);
+
+        let mut generator = NFAGenerator::new(config.alphabet.clone(), Some(input_line.1.clone()));
+        // TODO these could probably be mixed together into a single 'generate' command
+        generator.add_to_table(&simplified, 0, 1);
+        generator.create_nfa();
     }
 
     // let simplified = wreck::ast::simplify_RE(&tree);

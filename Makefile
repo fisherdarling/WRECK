@@ -3,10 +3,12 @@ build:
 	@cp ./target/release/WRECK ./WRECK;
 	@chmod +x ./WRECK
 
+clean_out:
+	rm -f *.svg
+	rm -f *.dot
+	rm -f *.nfa
+	rm -f test_out.txt
 clean:
 	cargo clean
-	rm *.m
-	rm *.cmptt
-	rm *.tt
-	rm *.dat
-	rm test_out.txt
+	rm WRECK
+	clean_out

@@ -43,25 +43,42 @@ impl NFAGenerator {
     }
 
     pub fn create_nfa(&mut self) -> std::io::Result<()> {
+        println!("Transitions: {:?}", self.transitions);
+        println!("Lambda transitions {:?}", self.lambda_transitions);
+        let mut has_found_one = false;
         let mut path = self.token_id.clone().unwrap(); // will panic if token_id is nothing
         path.push_str(".nfa");
         let mut output_lines: Vec<String> = Vec::new();
         let lambda_char = self.find_lambda_char().unwrap();
 
+        let mut added_ts: BTreeSet<(usize, &usize)> = BTreeSet::new();
+
         for t in &self.transitions {
             let mut output_line = String::new();
             let from = (t.0).0;
             let to = t.1;
-            let all_chars_for_this_trans: Vec<char> = self
+            if added_ts.contains(&(from, to)) {
+                println!("skipping {:?}", &(from, to));
+                continue;
+            } else {
+                added_ts.insert((from, to));
+            }
+            println!("Dealing with {:#?}", t);
+
+            let mut all_chars_for_this_trans: Vec<char> = self
                 .transitions
                 .iter()
                 .filter(|maybe| (maybe.0).0 == from && (maybe.1) == to)
                 .map(|c| (c.0).1)
                 .collect();
+            // all_chars_for_this_trans.push((t.0).1);
+
+            println!("All chars for this trans: {:?}", all_chars_for_this_trans);
             let has_lambda = *self.lambda_transitions.get(&(from, *to)).unwrap_or(&false);
 
             if from == 1 {
                 output_line.push_str("+ ");
+                has_found_one = true;
             } else {
                 output_line.push_str("- ")
             }
@@ -88,6 +105,8 @@ impl NFAGenerator {
 
             println!("All chars: {:?}", all_chars_for_this_trans);
             println!("has lambda: {:?}", has_lambda);
+
+            // remove transitions we added
         }
 
         for t in &self.lambda_transitions {
@@ -97,6 +116,7 @@ impl NFAGenerator {
 
             if from == 1 {
                 output_line.push_str("+ ");
+                has_found_one = true;
             } else {
                 output_line.push_str("- ")
             }
@@ -106,6 +126,15 @@ impl NFAGenerator {
             output_line.push_str(&to.to_string());
             output_line.push(' ');
             output_line.push(lambda_char);
+            output_lines.push(output_line);
+        }
+
+        if !has_found_one {
+            let mut output_line = String::new();
+            output_line.push_str("+ ");
+            output_line.push_str(&1.to_string());
+            output_line.push(' ');
+            output_line.push_str(&1.to_string());
             output_lines.push(output_line);
         }
 
@@ -119,7 +148,7 @@ impl NFAGenerator {
         ordered_alpha.sort();
 
         for c in ordered_alpha.iter() {
-            first_line.push(**c);
+            first_line.push_str(&alphabet_translator::char_to_hex_if_whitespace(**c));
             first_line.push(' ');
         }
 
@@ -181,6 +210,7 @@ impl NFAGenerator {
     }
 
     pub fn node_seq(&mut self, node: &AstNode, this: usize, next: usize) {
+        println!("in node seq");
         let new_states: Vec<usize> = (0..node.children.len() - 1)
             .map(|_| self.get_new_state())
             .collect();
