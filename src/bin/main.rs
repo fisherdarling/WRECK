@@ -20,11 +20,31 @@ fn main() {
     let args = Args::from_args();
 
     let config = LexerConfig::from_file(args.input);
+    glue(&config);
+}
 
-    println!("Alpha:\n{:?}\n", config.alphabet);
+// TODO this should probably be moved to main, just doing it here so we don't get merge conflicts
+fn glue(config: &LexerConfig) {
+    let cfg = CFG::from_file("llre.cfg").unwrap(); // TODO this is the only input, right?
+    let table = LLTable::from_cfg(&cfg);
+    for input_line in &config.regexes {
+        let mut lexer = silly_lex::Lexer::new(&input_line.0).iter();
+        let mut parser = Parser::new(&cfg, &table);
+        let tree = parser.parse(&mut lexer.peekable());
 
-    println!("Regexes:");
-    config.regexes.iter().for_each(|r| println!("{:?}", r));
+        let mut dot_output = input_line.1.clone();
+        dot_output.push_str(".dot");
+        tree.export_graph(&dot_output);
+
+        let simplified = wreck::ast::simplify_RE(&tree);
+
+        let mut simplified_dot_output = input_line.1.clone();
+        simplified_dot_output.push_str("_simple.dot");
+
+        simplified.export_graph(&simplified_dot_output);
+    }
+
+    // let simplified = wreck::ast::simplify_RE(&tree);
 }
 
 fn print_table(cfg: &CFG, lltable: &LLTable) {
