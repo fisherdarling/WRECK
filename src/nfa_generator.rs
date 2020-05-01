@@ -159,8 +159,8 @@ impl NFAGenerator {
         let mut file = File::create(path)?;
 
         for line in output_lines {
-            file.write_all(line.as_bytes());
-            file.write(b"\n");
+            file.write_all(line.as_bytes()).unwrap();
+            file.write(b"\n").unwrap();
         }
         Ok(())
     }

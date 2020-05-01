@@ -5,4 +5,5 @@ WRECK
 
 *.dot
 *.svg
+*.nfa
 test_output/*
