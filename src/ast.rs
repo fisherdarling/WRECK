@@ -265,7 +265,7 @@ pub fn simplify_alt(alt_node: &AstNode) -> AstNode {
         return seq;
     }
 
-    new_alt.children.append(&mut seq.children);
+    new_alt.children.push(seq);
     new_alt.children.append(&mut alt.children);
 
     new_alt

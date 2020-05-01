@@ -3,4 +3,6 @@ Cargo.lock
 test_out.txt
 WRECK
 
+*.dot
+*.svg
 test_output/*
