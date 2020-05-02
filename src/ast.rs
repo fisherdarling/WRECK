@@ -288,6 +288,12 @@ pub fn simplify_alt_list(altlist_node: &AstNode) -> AstNode {
 pub fn simplify_seq(node: &AstNode) -> AstNode {
     let mut new_seq = AstNode::new(AstKind::Seq);
 
+    let mut atom = simplify_atom(&node.children[0]);
+    let mut seqlist = simplify_seq_list(&node.children[1]);
+
+    new_seq.children.append(&mut atom.children);
+    new_seq.children.append(&mut seqlist.children);
+    
     if new_seq.children.len() == 1 {
         return new_seq.children.pop().unwrap();
     }
@@ -295,13 +301,6 @@ pub fn simplify_seq(node: &AstNode) -> AstNode {
     if node.children[0].kind == AstKind::Lambda {
         return AstNode::new(AstKind::Lambda);
     }
-
-    let mut atom = simplify_atom(&node.children[0]);
-    let mut seqlist = simplify_seq_list(&node.children[1]);
-
-    new_seq.children.append(&mut atom.children);
-    new_seq.children.append(&mut seqlist.children);
-    
 
     new_seq
 }
