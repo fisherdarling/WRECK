@@ -245,7 +245,9 @@ impl NFAGenerator {
 
     pub fn node_alt(&mut self, node: &AstNode, this: usize, next: usize) {
         for i in 0..node.children.len() {
-            self.add_to_table(&node.children[i], this, next);
+            let new = self.get_new_state();
+            self.lambda_transitions.insert((this, new), true);
+            self.add_to_table(&node.children[i], new, next);
         }
     }
 
