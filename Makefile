@@ -1,3 +1,7 @@
+build-debug:
+	cargo build --bin WRECK;
+	@cp ./target/debug/WRECK ./WRECK;
+	@chmod +x ./WRECK
 build:
 	cargo build --release --bin WRECK;
 	@cp ./target/release/WRECK ./WRECK;
