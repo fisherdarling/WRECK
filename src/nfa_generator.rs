@@ -44,7 +44,7 @@ impl NFAGenerator {
 
     pub fn create_nfa(&mut self) -> std::io::Result<()> {
         // println!("Transitions: {:?}", self.transitions);
-        // println!("Lambda transitions {:?}", self.lambda_transitions);
+        println!("Lambda transitions {:?}", self.lambda_transitions);
         let mut has_found_one = false;
         let mut path = self.token_id.clone().unwrap(); // will panic if token_id is nothing
         path.push_str(".nfa");
