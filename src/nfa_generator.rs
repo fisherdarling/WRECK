@@ -252,8 +252,15 @@ impl NFAGenerator {
     pub fn node_kleene(&mut self, node: &AstNode, this: usize, next: usize) {
         let out = self.get_new_state();
         self.lambda_transitions.insert((this, out), true);
-        self.add_to_table(&node.children[0], out, this);
-        self.lambda_transitions.insert((this, next), true);
+        self.add_to_table(&node.children[0], out, out);
+        self.lambda_transitions.insert((out, next), true);
+
+        // 12/13 tests pass with this commented in
+        // let out = self.get_new_state();
+        // self.lambda_transitions.insert((this, out), true);
+        // self.add_to_table(&node.children[0], out, this);
+        // self.lambda_transitions.insert((this, next), true);
+
         // self.lambda_transitions.insert((out, this), true);
 
         // self.add_to_table(&node.children[0], this, out);
