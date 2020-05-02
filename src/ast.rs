@@ -293,8 +293,7 @@ pub fn simplify_seq(node: &AstNode) -> AstNode {
     }
 
     if node.children[0].kind == AstKind::Lambda {
-        new_seq.children.push(AstNode::new(AstKind::Lambda));
-        return new_seq;
+        return AstNode::new(AstKind::Lambda);
     }
 
     let mut atom = simplify_atom(&node.children[0]);
