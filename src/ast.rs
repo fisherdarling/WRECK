@@ -190,7 +190,6 @@ pub fn simplify_RE(root_node: &AstNode) -> AstNode {
 }
 
 pub fn simplify_plus(mut node: AstNode) -> AstNode {
-    println!("Hi");
     let mut new_seq = AstNode::new(AstKind::Seq);
     let mut kleene = AstNode::new(AstKind::Kleene);
     let mut copy = node.clone();
@@ -258,7 +257,7 @@ pub fn simplify_nucleus(nucleus_node: &AstNode) -> AstNode {
 
 pub fn simplify_alt(alt_node: &AstNode) -> AstNode {
     let mut new_alt = AstNode::new(AstKind::Alt);
-    let mut seq = simplify_seq(&alt_node.children[0]);
+    let seq = simplify_seq(&alt_node.children[0]);
     let mut alt = simplify_alt_list(&alt_node.children[1]);
 
     if alt_node.children[1].children.len() == 1 {
@@ -289,6 +288,10 @@ pub fn simplify_alt_list(altlist_node: &AstNode) -> AstNode {
 pub fn simplify_seq(node: &AstNode) -> AstNode {
     let mut new_seq = AstNode::new(AstKind::Seq);
 
+    if new_seq.children.len() == 1 {
+        return new_seq.children.pop().unwrap();
+    }
+
     if node.children[0].kind == AstKind::Lambda {
         new_seq.children.push(AstNode::new(AstKind::Lambda));
         return new_seq;
@@ -300,9 +303,6 @@ pub fn simplify_seq(node: &AstNode) -> AstNode {
     new_seq.children.append(&mut atom.children);
     new_seq.children.append(&mut seqlist.children);
     
-    if new_seq.children.len() == 1 {
-        return new_seq.children.pop().unwrap();
-    }
 
     new_seq
 }
